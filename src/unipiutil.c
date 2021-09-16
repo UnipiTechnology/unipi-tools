@@ -17,10 +17,12 @@ typedef struct __attribute__ ((packed)) {
     //uint8_t   fill[2];
 } unipiversion_t;
 
+#define UNIPI_PRODUCT_MAX_LEN 30
 
 unipiversion_t global_unipi_version;
 char  unipi_name[sizeof(global_unipi_version.model)+1];
 int unipi_loaded = 0;
+char  unipi_product[UNIPI_PRODUCT_MAX_LEN+1];
 
 int read_unipi1_eprom( unipiversion_t *ver)
 {
@@ -118,3 +120,21 @@ uint32_t get_unipi_serial(void)
 	return global_unipi_version.serial;
 }
 
+char* get_unipi_product(void)
+{
+   int res;
+
+   int f = open("/etc/unipi/product", O_RDONLY);
+   if (f >= 0) {
+       res = read(f, unipi_product, sizeof(UNIPI_PRODUCT_MAX_LEN));
+       if (res <= 0) goto err;
+       unipi_product[res] = 0;
+       close(f);
+       return unipi_product;
+   }
+
+err:
+   close(f);
+   return NULL;
+
+}

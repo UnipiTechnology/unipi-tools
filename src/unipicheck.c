@@ -11,6 +11,7 @@
 #include <assert.h>
 #include <regex.h>
 #include <sys/wait.h>
+#include <getopt.h>
 
 #include "unipiutil.h"
 
@@ -81,6 +82,30 @@ int match(char* regstring, char* model)
 	return (!reti);
 }
 
+int verbose = 0;
+const char* version_string = PROJECT_VER;
+int do_product = 0;
+
+static struct option long_options[] = {
+  {"verbose", no_argument,       0, 'v'},
+  {"product",  no_argument,       0, 'p'},
+  {"info", no_argument, 0, 'i'},
+  //{"listen",  required_argument, 0, 'l'},
+  {0, 0, 0, 0}
+};
+
+static void print_usage(const char *progname)
+{
+  printf("usage: %s [-v[v]] [-p] \n", progname);
+  int i;
+  for (i=0; ; i++) {
+      if (long_options[i].name == NULL)  return;
+      printf("  --%s%s\t %s\n", long_options[i].name,
+                                long_options[i].has_arg?"=...":"",
+                                "");
+  }
+}
+
 
 #define MAXLINE 1024
 int main(int argc, char** argv)
@@ -93,6 +118,51 @@ int main(int argc, char** argv)
    FILE* ftable;
    char *saveptr;
    char *line, *token;
+
+     // Options
+    int c;
+    while (1) {
+       int option_index = 0;
+       c = getopt_long(argc, argv, "vpi", long_options, &option_index);
+       if (c == -1) {
+           if (optind < argc)  {
+               if ((argv[optind]==NULL) || (argv[optind][0] == '\0')) {
+                   //optind++;
+                   break;
+               }
+               printf ("non-option ARGV-element: %s\n", argv[optind]);
+               exit(EXIT_FAILURE);
+            }
+            break;
+       }
+
+       switch (c) {
+       case 'v':
+           verbose++;
+           break;
+       case 'p':
+           do_product = 1;
+           break;
+       case 'i':
+           printf("Version: %s\n", version_string);
+           exit(EXIT_SUCCESS);
+           break;
+       default:
+           print_usage(argv[0]);
+           exit(EXIT_FAILURE);
+           break;
+       }
+    }
+
+
+   if (do_product) {
+       unipi_model = get_unipi_product();
+       if (unipi_model) {
+           printf("%s", unipi_model);
+           exit(EXIT_SUCCESS);
+       }
+       exit(EXIT_FAILURE);
+   }
 
    unipi_model = get_unipi_name();
    if (unipi_model[0]=='\0') return 0;

@@ -19,6 +19,7 @@
 
 char* get_unipi_name(void);
 uint32_t get_unipi_serial(void);
+char* get_unipi_product(void);
 
 
 #endif
