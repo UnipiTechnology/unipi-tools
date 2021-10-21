@@ -48,6 +48,8 @@ override_dh_systemd_enable:
 override_dh_auto_build:
 	dh_auto_build -- ${EXTRA_BUILD_PAR} PROJECT_VERSION=${PROJECT_VERSION}
 
+override_dh_install:
+	dh_istall -- ${EXTRA_BUILD_PAR} PROJECT_VERSION=${PROJECT_VERSION}
 EOF
 
 
