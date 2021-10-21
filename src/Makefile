@@ -120,11 +120,11 @@ fwserial: fw.serial.o armutil.o fwimage.serial.o fwconfig.serial.o fwopt.serial.
 	@chmod +x $@
 
 unipihostname:  unipihostname.o unipiutil.o
-	$(CC) unipihostname.o unipiutil.o $(PROJECT_VERSION) -o $@
+	$(CC) unipihostname.o unipiutil.o $(PROJECT_VERSION) -l i2c -o $@
 	@chmod +x $@
 
 unipicheck:  unipicheck.o unipiutil.o
-	$(CC) unipicheck.o unipiutil.o -o $@
+	$(CC) unipicheck.o unipiutil.o -l i2c -o $@
 	@chmod +x $@
 
 bandwidth-client: bandwidth-client.o
