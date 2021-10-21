@@ -18,10 +18,11 @@ clean:
 	dh clean
 	[ -x debian/control-generator.sh ] && debian/control-generator.sh
 
-%:
-	dh $@ --with=systemd
 
 override_dh_strip:
 	dh_strip --no-automatic-dbgsym
 
 -include debian/rules.in
+
+%:
+	dh $@ --with=systemd
