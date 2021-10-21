@@ -48,7 +48,7 @@ install:
 	$(INSTALL) -D $(BINFILES:%=src/%) -t $(DESTDIR)/opt/unipi/tools
 	$(INSTALL) -D src/unipi-target.map -t $(DESTDIR)/opt/unipi/data
 	if [ -n "${LINUX_DIR_PATH}" ]; then \
-	    $(INSTALL) -D overlays/*.dtbo -t $(DESTDIR)/boot/overlays \
+	    $(INSTALL) -D overlays/*.dtbo -t $(DESTDIR)/boot/overlays; \
 	fi
 
 mr-proper:
