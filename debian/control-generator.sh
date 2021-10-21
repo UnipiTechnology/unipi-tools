@@ -20,8 +20,8 @@ if [ "${DEBIAN_VERSION}" == "stretch" -o "${DEBIAN_VERSION}" == "buster" ]; then
         EXTRA_BUILD_PAR="LINUX_DIR_PATH=${LINUX_DIR_ARR[0]}"
     fi
 
-    echo "unipi:PreDepends=unipi-common(>=1.2.22~)" > debian/substvars
-    echo "unipi:Depends=unipi-kernel-modules (>=1.42) | unipi-kernel-modules-dkms (>=1.42) | neuron-kernel (>=1.42) | axon-kernel (>= 1.13.20180719)" >> debian/substvars
+    #echo "unipi:PreDepends=unipi-common(>=1.2.22~)" > debian/substvars
+    #echo "unipi:Depends=unipi-kernel-modules (>=1.42) | unipi-kernel-modules-dkms (>=1.42) | neuron-kernel (>=1.42) | axon-kernel (>= 1.13.20180719)" >> debian/substvars
     #####################################################################
     ### Modify control - add unipi-common
     cat >>debian/control <<EOF
@@ -51,6 +51,11 @@ override_dh_auto_build:
 override_dh_auto_install:
 	cat debian/substvars
 	dh_auto_install -- ${EXTRA_BUILD_PAR} PROJECT_VERSION=${PROJECT_VERSION}
+
+override_dh_gencontrol:
+	dh_gencontrol -- -Vunipi:PreDepends=unipi-common(>=1.2.22~) -V${EXTRA_BUILD_PAR} PROJECT_VERSION=${PROJECT_VERSION} \
+	       -Vunipi:Depends=unipi-kernel-modules (>=1.42) | unipi-kernel-modules-dkms (>=1.42) | neuron-kernel (>=1.42) | axon-kernel (>= 1.13.20180719)
+
 EOF
 
 
@@ -58,8 +63,8 @@ else
     ################################################################################
     #for bullseye ++ - unipi-common replaced by unipi-os-configurator in own project
 
-    echo "unipi:PreDepends=unipi-os-configurator" > debian/substvars
-    echo "unipi:Depends=unipi-os-configurator" >> debian/substvars
+    #echo "unipi:PreDepends=unipi-os-configurator" > debian/substvars
+    #echo "unipi:Depends=unipi-os-configurator" >> debian/substvars
 
     #####################################################################
     ### Create rules.in
@@ -68,6 +73,10 @@ else
 override_dh_auto_build:
 	dh_auto_build -- PROJECT_VERSION=${PROJECT_VERSION}
 	cat debian/substvars
+
+override_dh_gencontrol:
+	dh_gencontrol -- -Vunipi:PreDepends=unipi-os-configurator \
+	       -Vunipi:Depends=unipi-os-configurator
 
 EOF
 
