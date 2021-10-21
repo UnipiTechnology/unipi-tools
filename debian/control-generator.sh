@@ -28,7 +28,7 @@ if [ "${DEBIAN_VERSION}" == "stretch" -o "${DEBIAN_VERSION}" == "buster" ]; then
 
 Package: unipi-common
 Architecture: any
-Depends: \${shlibs:Depends}, \${misc:Depends}, busybox, initramfs-tools libi2c0
+Depends: \${shlibs:Depends}, \${misc:Depends}, busybox, initramfs-tools, libi2c0
 Breaks: unipi-firmware (<<5.50), unipi-kernel-modules (<<1.42), unipi-kernel-modules-dkms (<<1.42), neuron-kernel (<<1.13.20180719), axon-kernel (<<1.13.20180719), unipi-lte (<<0.10~)
 Description: Common utilities for Unipi/Neuron/Axon
  Check model and version of Unipi platform
@@ -53,8 +53,6 @@ override_dh_auto_install:
 
 override_dh_gencontrol:
 	dh_gencontrol -- -Tdebian/substvars
-#	dh_gencontrol -- -Vunipi:PreDepends="unipi-common(>=1.2.22~)" \
-#	       -Vunipi:Depends="unipi-kernel-modules (>=1.42) | unipi-kernel-modules-dkms (>=1.42) | neuron-kernel (>=1.42) | axon-kernel (>= 1.13.20180719)"
 
 EOF
 
@@ -75,8 +73,6 @@ override_dh_auto_build:
 
 override_dh_gencontrol:
 	dh_gencontrol -- -Tdebian/substvars
-#	dh_gencontrol -- -Vunipi:PreDepends="unipi-os-configurator" \
-#	       -Vunipi:Depends="unipi-os-configurator"
 
 EOF
 
