@@ -49,7 +49,6 @@ override_dh_auto_build:
 	dh_auto_build -- ${EXTRA_BUILD_PAR} PROJECT_VERSION=${PROJECT_VERSION}
 
 override_dh_auto_install:
-	cat debian/substvars
 	dh_auto_install -- ${EXTRA_BUILD_PAR} PROJECT_VERSION=${PROJECT_VERSION}
 
 override_dh_gencontrol:
@@ -72,7 +71,6 @@ else
 
 override_dh_auto_build:
 	dh_auto_build -- PROJECT_VERSION=${PROJECT_VERSION}
-	cat debian/substvars
 
 override_dh_gencontrol:
 	dh_gencontrol -- -Vunipi:PreDepends=unipi-os-configurator \
