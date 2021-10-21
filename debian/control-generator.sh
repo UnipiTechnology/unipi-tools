@@ -52,8 +52,8 @@ override_dh_auto_install:
 	dh_auto_install -- ${EXTRA_BUILD_PAR} PROJECT_VERSION=${PROJECT_VERSION}
 
 override_dh_gencontrol:
-	dh_gencontrol -- -Vunipi:PreDepends=unipi-common(>=1.2.22~) -V${EXTRA_BUILD_PAR} PROJECT_VERSION=${PROJECT_VERSION} \
-	       -Vunipi:Depends=unipi-kernel-modules (>=1.42) | unipi-kernel-modules-dkms (>=1.42) | neuron-kernel (>=1.42) | axon-kernel (>= 1.13.20180719)
+	dh_gencontrol -- -Vunipi:PreDepends="unipi-common(>=1.2.22~)" \
+	       -Vunipi:Depends="unipi-kernel-modules (>=1.42) | unipi-kernel-modules-dkms (>=1.42) | neuron-kernel (>=1.42) | axon-kernel (>= 1.13.20180719)"
 
 EOF
 
@@ -73,8 +73,8 @@ override_dh_auto_build:
 	dh_auto_build -- PROJECT_VERSION=${PROJECT_VERSION}
 
 override_dh_gencontrol:
-	dh_gencontrol -- -Vunipi:PreDepends=unipi-os-configurator \
-	       -Vunipi:Depends=unipi-os-configurator
+	dh_gencontrol -- -Vunipi:PreDepends="unipi-os-configurator" \
+	       -Vunipi:Depends="unipi-os-configurator"
 
 EOF
 
