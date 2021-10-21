@@ -20,7 +20,7 @@ DO_LIBMODBUS = $(shell dpkg --compare-versions "$(LIBMODBUS_VER)" ge "3.1.4" || 
 
 all: libmodbus
 	cd src; make
-	if [ -n "${LINUX_DIR_PATH}" ]; then 
+	if [ -n "${LINUX_DIR_PATH}" ]; then \
 	  cd overlays; make LINUX_DIR_PATH="${LINUX_DIR_PATH}"; cd ../.. ; \
 	fi
 
