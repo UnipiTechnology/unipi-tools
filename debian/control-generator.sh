@@ -48,8 +48,9 @@ override_dh_systemd_enable:
 override_dh_auto_build:
 	dh_auto_build -- ${EXTRA_BUILD_PAR} PROJECT_VERSION=${PROJECT_VERSION}
 
-override_dh_install:
-	dh_install -- ${EXTRA_BUILD_PAR} PROJECT_VERSION=${PROJECT_VERSION}
+override_dh_auto_install:
+	cat debian/substvars
+	dh_auto_install -- ${EXTRA_BUILD_PAR} PROJECT_VERSION=${PROJECT_VERSION}
 EOF
 
 
@@ -66,6 +67,7 @@ else
 
 override_dh_auto_build:
 	dh_auto_build -- PROJECT_VERSION=${PROJECT_VERSION}
+	cat debian/substvars
 
 EOF
 
