@@ -54,11 +54,10 @@
 #define NSS_PAUSE_DEFAULT  10
 
 //static int be_quiet = 0;
-int arm_verbose = 0;
 int nss_pause = NSS_PAUSE_DEFAULT;
 
 
-int one_phase_op(arm_handle* arm, uint8_t op, uint16_t reg, uint8_t value, uint8_t do_lock)
+static int one_phase_op(arm_handle* arm, uint8_t op, uint16_t reg, uint8_t value, uint8_t do_lock)
 {
     int ret;
     uint32_t total = SIZEOF_HEADER + CRC_SIZE;
@@ -69,11 +68,11 @@ int one_phase_op(arm_handle* arm, uint8_t op, uint16_t reg, uint8_t value, uint8
     }
 
     memset(char_package, 0, 10);
-    char_package[0] = (uint8_t)arm->index;
+    char_package[0] = (uint8_t)arm->channel.index-1;
     char_package[3] = 1;
-    if (arm->speed) {
-        char_package[4] = arm->speed >> 8;
-        char_package[5] = arm->speed & 0xff;
+    if (arm->channel.speed) {
+        char_package[4] = arm->channel.speed >> 8;
+        char_package[5] = arm->channel.speed & 0xff;
     }
     char_package[7] = do_lock;
 
@@ -82,9 +81,9 @@ int one_phase_op(arm_handle* arm, uint8_t op, uint16_t reg, uint8_t value, uint8
     *((uint16_t*)(char_package+12)) = reg;
     *((uint16_t*)(char_package+14)) = SpiCrcString(char_package+10, SIZEOF_HEADER, 0);
 
-    ret = write(arm->fd, char_package, total+10);
+    ret = write(arm->channel.fd, char_package, total+10);
     if (ret == total+10) 
-        ret = read(arm->fd, char_package, total+10);
+        ret = read(arm->channel.fd, char_package, total+10);
     if (ret < 1) {
         if (arm_verbose) printf("Ph1-OP(%x): Error sending spi message", op);
         return -1;
@@ -100,7 +99,7 @@ int one_phase_op(arm_handle* arm, uint8_t op, uint16_t reg, uint8_t value, uint8
 }
 
 char errmsg[256];
-int two_phase_op(arm_handle* arm, uint8_t op, uint16_t reg, uint16_t len2)
+static int two_phase_op(arm_handle* arm, uint8_t op, uint16_t reg, uint16_t len2)
 {
     int ret;
     uint16_t tr_len2;
@@ -134,11 +133,11 @@ int two_phase_op(arm_handle* arm, uint8_t op, uint16_t reg, uint16_t len2)
     crc = SpiCrcString(&arm->tx2, tr_len2, crc);   // crc of second phase
     ((uint16_t*)arm->tx2)[tr_len2>>1] = crc;
     memcpy(char_package+16, &arm->tx2, tr_len2 + CRC_SIZE);
-    char_package[0] = (uint8_t)arm->index;
+    char_package[0] = (uint8_t)arm->channel.index-1;
     char_package[3] = 1;
-    if (arm->speed) {
-        char_package[4] = arm->speed >> 8;
-        char_package[5] = arm->speed & 0xff;
+    if (arm->channel.speed) {
+        char_package[4] = arm->channel.speed >> 8;
+        char_package[5] = arm->channel.speed & 0xff;
     }
     char_package[6] = delay_usecs;
     *((uint16_t *)&char_package[1]) = reg;
@@ -148,10 +147,10 @@ int two_phase_op(arm_handle* arm, uint8_t op, uint16_t reg, uint16_t len2)
                     char_package[14], char_package[15], char_package[16], char_package[17],
                     char_package[18], char_package[19]);
 
-    ret = write(arm->fd, char_package, total+10);
+    ret = write(arm->channel.fd, char_package, total+10);
     if (arm_verbose>1) printf("WRITE RET:%d TOT:%d\n", ret, total);
     if (ret == total+10) 
-        ret = read(arm->fd, char_package, total+10);
+        ret = read(arm->channel.fd, char_package, total+10);
 
     if (ret < 1) {
         if (arm_verbose) printf("Can't send two-phase spi message\n");
@@ -172,8 +171,9 @@ int two_phase_op(arm_handle* arm, uint8_t op, uint16_t reg, uint16_t len2)
     return -1;
 }
 
-int idle_op(arm_handle* arm, uint8_t do_lock)
+int idle_op(struct kchannel *channel, uint8_t do_lock)
 {
+	arm_handle *arm = (arm_handle *) channel;
     int backup = arm_verbose;
     arm_verbose = 0;
     int n = one_phase_op(arm, ARM_OP_IDLE, 0x0e55, 0, do_lock);
@@ -181,8 +181,9 @@ int idle_op(arm_handle* arm, uint8_t do_lock)
     return n;
 }
 
-int read_regs(arm_handle* arm, uint16_t reg, uint8_t cnt, uint16_t* result)
+static int read_regs(struct kchannel *channel, uint16_t reg, uint8_t cnt, uint16_t* result)
 {
+	arm_handle *arm = (arm_handle *) channel;
     uint16_t len2 = SIZEOF_HEADER + sizeof(uint16_t) * cnt;
 
     int ret = two_phase_op(arm, ARM_OP_READ_REG, reg, len2);
@@ -203,8 +204,9 @@ int read_regs(arm_handle* arm, uint16_t reg, uint8_t cnt, uint16_t* result)
     return cnt;
 }
 
-int write_regs(arm_handle* arm, uint16_t reg, uint8_t cnt, uint16_t* values)
+static int write_regs(struct kchannel *channel, uint16_t reg, uint8_t cnt, uint16_t* values)
 {
+	arm_handle *arm = (arm_handle *) channel;
     if (cnt > 126) {
         if (arm_verbose) printf("Too many registers in WRITE_REG");
         return -1;
@@ -230,8 +232,9 @@ int write_regs(arm_handle* arm, uint16_t reg, uint8_t cnt, uint16_t* values)
     return cnt;
 }
 
-int read_bits(arm_handle* arm, uint16_t reg, uint16_t cnt, uint8_t* result)
+static int read_bits(struct kchannel *channel, uint16_t reg, uint8_t cnt, uint8_t* result)
 {
+	arm_handle *arm = (arm_handle *) channel;
     uint8_t mask;
     int lastbyte, retcnt;
     uint16_t len2 = SIZEOF_HEADER + (((cnt+15) >> 4) << 1);  // trunc to 16bit in bytes
@@ -264,8 +267,9 @@ int read_bits(arm_handle* arm, uint16_t reg, uint16_t cnt, uint8_t* result)
     return cnt;
 }
 
-int write_bit(arm_handle* arm, uint16_t reg, uint8_t value, uint8_t do_lock)
+static int write_bit(struct kchannel *channel, uint16_t reg, uint8_t value, uint8_t do_lock)
 {
+	arm_handle *arm = (arm_handle *) channel;
     int ret = one_phase_op(arm, ARM_OP_WRITE_BIT, reg, !(!value), do_lock);
     if (ret < 0) {
         return ret;
@@ -273,8 +277,9 @@ int write_bit(arm_handle* arm, uint16_t reg, uint8_t value, uint8_t do_lock)
     return 1;
 }
 
-int write_bits(arm_handle* arm, uint16_t reg, uint16_t cnt, uint8_t* values)
+static int write_bits(struct kchannel *channel, uint16_t reg, uint8_t cnt, uint8_t* values)
 {
+	arm_handle *arm = (arm_handle *) channel;
     if (arm == NULL) {
         if (arm_verbose>1) printf("Write Bits: Invalid Arm device (NULL)\n");
     	return -1;
@@ -302,62 +307,20 @@ int write_bits(arm_handle* arm, uint16_t reg, uint16_t cnt, uint8_t* values)
     return cnt;
 }
 
-
-#define START_SPI_SPEED 5000000
-int arm_init(arm_handle* arm, const char* device, uint32_t speed, int index)
+static Tboard_version * get_version(struct kchannel* channel)
 {
-    arm->fd = open(device, O_RDWR);
-
-    if (arm->fd < 0) {
-        if (arm_verbose) printf("ARMINIT: Cannot open device %s\n", device);
-        return -1;
-    }
-
-    arm->index = index & 0x7f;
-
-    /* Load firmware and hardware versions */
-    arm->bv.sw_version = 0;
-    int backup = arm_verbose;
-    arm_verbose = 0;
-    arm->speed=speed / 1000;
-
-    if (index & 0x80) idle_op(arm, 255);// Unlock operation
-
     uint16_t configregs[5];
-    if (read_regs(arm, 1000, 5, configregs) == 5) {
-        parse_version(&arm->bv, configregs);
-        if (backup>1) printf("ARMINIT: Config-regs: %x %x %x %x %x\n", configregs[0], configregs[1], configregs[2], configregs[3], configregs[4]);
-    }
-
-    if (speed == 0) {
-        speed = get_board_speed(&arm->bv);
-        //set_spi_speed(arm->fd, speed);
-        if (read_regs(arm, 1000, 5, configregs) != 5) {
-            speed = START_SPI_SPEED;
-        }
-    }
-    if (arm_verbose>1) printf("ARMINIT: finished pt1:%x\n", arm->bv.sw_version);
-    arm_verbose = backup;
-    if (arm->bv.sw_version) {
-        if (arm_verbose)
-            printf("Board on %s firmware=%d.%d  hardware=%d.%d (%s) (spi %dMHz)\n", device,
-                SW_MAJOR(arm->bv.sw_version), SW_MINOR(arm->bv.sw_version),
-                HW_BOARD(arm->bv.hw_version), HW_MAJOR(arm->bv.hw_version),
-                arm_name(arm->bv.hw_version), speed / 1000000);
-    } else {
-        close(arm->fd);
-        return -1;
-    }
-
-    if (arm_verbose>1) printf("ARMINIT: finished!\n");
-
-    return 0;
+	if (channel->_bv.sw_version == 0) {
+		if (read_regs(channel, 1000, 5, configregs) == 5) {
+			parse_version(&channel->_bv, configregs);
+		}
+	}
+	return &channel->_bv;
 }
 
 /***************************************************************************************/
 
-
-uint32_t firmware_op(arm_handle* arm, uint32_t address, uint8_t* tx_data, int tx_len)
+static uint32_t firmware_op(struct kchannel *channel, uint32_t address, uint8_t* tx_data, int tx_len)
 {
     uint16_t crc;
     int ret;
@@ -376,24 +339,24 @@ uint32_t firmware_op(arm_handle* arm, uint32_t address, uint8_t* tx_data, int tx
                                       ARM_PAGE_SIZE+sizeof(address), 0);// calculate crc from address + data
     memcpy(char_package+10+ sizeof(address)+ARM_PAGE_SIZE, &crc, 
                                       sizeof(crc));						// set crc
-    char_package[0] = (uint8_t)arm->index;
+    char_package[0] = (uint8_t)channel->index-1;
     char_package[3] = 0;
-    if (arm->speed) {
-        char_package[4] = arm->speed >> 8;
-        char_package[5] = arm->speed & 0xff;
+    if (channel->speed) {
+        char_package[4] = channel->speed >> 8;
+        char_package[5] = channel->speed & 0xff;
     }
-    char_package[7] = ((uint8_t)arm->index+1);
+    char_package[7] = ((uint8_t)channel->index);
     if (arm_verbose>1) printf("FW-OP send len:%ld: addr:%02x%02x%02x%02x\t%02x %02x %02x %02x %02x %02x\n", 
                  sizeof(arm_comm_firmware), char_package[13], char_package[12], char_package[11], char_package[10],
                  char_package[14], char_package[15], char_package[16], char_package[17],
                  char_package[18], char_package[19]);
 
-    ret = write(arm->fd, char_package, sizeof(arm_comm_firmware) + 10);
+    ret = write(channel->fd, char_package, sizeof(arm_comm_firmware) + 10);
     if (ret != sizeof(arm_comm_firmware) + 10) {
     	if (arm_verbose) printf("FW-OP invalid length written: %d, exp: %ld\n", ret, sizeof(arm_comm_firmware) + 10);
         return 0xffffffff;
     }    
-   	ret = read(arm->fd, char_package, sizeof(arm_comm_firmware) + 10);
+   	ret = read(channel->fd, char_package, sizeof(arm_comm_firmware) + 10);
     if (ret != sizeof(arm_comm_firmware) + 10) {
     	if (arm_verbose) printf("FW-OP invalid length read: %d, exp: %ld\n", ret, sizeof(arm_comm_firmware) + 10);
         return 0xffffffff;
@@ -412,95 +375,111 @@ uint32_t firmware_op(arm_handle* arm, uint32_t address, uint8_t* tx_data, int tx
     return rx_result;
 }
 
-
+/*
 void start_firmware(arm_handle* arm)
 {
+	struct kchannel *channel = (struct kchannel *) arm;
     int prog_bit = 1004;
-    if (arm->bv.sw_version <= 0x400) prog_bit = 104;
-    write_bit(arm, prog_bit, 1, (arm->index) + 1);                                                   // start programming in ARM
+    if (channel->_bv.sw_version <= 0x400) prog_bit = 104;
+    write_bit(channel, prog_bit, 1, (arm->channel.index));                                                   // start programming in ARM
     usleep(100000);
 }
 
 void confirm_firmware(arm_handle* arm)
 {
+	struct kchannel *channel = (struct kchannel *) arm;
     int prog_bit = 1004;
-    write_bit(arm, prog_bit, 0, 0);
+    write_bit(channel, prog_bit, 0, 0);
     usleep(100000);
 }
+*/
 
-
-void finish_firmware(arm_handle* arm)
+static void finish_firmware(struct kchannel *channel)
 {
     uint32_t rx_result;
 
     // Finish transfer
-    rx_result = firmware_op(arm, ARM_FIRMWARE_KEY, NULL, 0);
+    rx_result = firmware_op(channel, ARM_FIRMWARE_KEY, NULL, 0);
     if ((rx_result != ARM_FIRMWARE_KEY) && (rx_result != 3)){
         if (arm_verbose) printf("UNKNOWN ERROR\nREBOOTING...\n");
     } else {
         if (arm_verbose) printf("REBOOTING...\n");
     }
-    idle_op(arm, 255);// Unlock operation
+    idle_op(channel, 255);// Unlock operation
     usleep(200000);
 }
 
-/*
-int send_firmware(arm_handle* arm, uint8_t* data, size_t datalen, uint32_t start_address)
-{
-    uint32_t rx_result;
 
-	int retry = 0;
-    int prev_addr = -1;
-    int len = datalen;
-    uint32_t address = start_address;
-    if (arm_verbose>1) printf("Starting to send %ld byte at %x\n", datalen, start_address);
-    while (len >= 0) {
-        if (len >= ARM_PAGE_SIZE) {
-            rx_result = firmware_op(arm, address, data + (address - start_address), ARM_PAGE_SIZE);
-            len = len - ARM_PAGE_SIZE;
-        } else if (len != 0) {
-            rx_result = firmware_op(arm, address, data + (address - start_address), len);
-            len = 0;
-        } else {
-            address = 0xF400;   // read-only page; operation is performed only for last page confirmation
-            rx_result = firmware_op(arm, address, NULL, 0);
-            len = -1;
-        }
-        if (rx_result != ARM_FIRMWARE_KEY) {
-        	if (arm_verbose) printf("Address %x does not equal %x\n", rx_result, ARM_FIRMWARE_KEY);
-            if ((retry++ >=10) || (prev_addr == -1)) { 
-            //if ((address == prev_addr)||(prev_addr == -1)) { 
-                // double error or start error
-                usleep(100000);
-                break;
-            }
-            address = prev_addr;
-            len = datalen - (address - start_address);
-            usleep(200000);
-            continue;
-        }
-        if (prev_addr != -1) {
-        	if (arm_verbose==1) {
-                printf("\r%04x OK ", prev_addr);
-                fflush(stdout);
-            } else if (arm_verbose>1) {
-                printf("%04x OK\n", prev_addr);
-            }
-        }
-        usleep(100000);
-        prev_addr = address;
-        address = address + ARM_PAGE_SIZE;
-		retry = 0;
+/*******************************************************************************/
+
+static void arm_close(struct kchannel* channel)
+{
+	arm_handle *arm = (arm_handle *) channel;
+	close(channel->fd);
+	free(arm);
+}
+
+#define START_SPI_SPEED 5000000
+struct kchannel* arm_init(const char* device, int index, uint32_t speed)
+//int arm_init(arm_handle* arm, const char* device, uint32_t speed, int index)
+{
+    arm_handle*  arm = calloc(1, sizeof(arm_handle));
+	struct kchannel* channel;
+	Tboard_version *bv;
+	if (arm == NULL) return NULL;
+
+	channel = &arm->channel;
+    channel->fd = open(device, O_RDWR);
+
+    if (channel->fd < 0) {
+        if (arm_verbose) printf("ARMINIT: Cannot open device %s\n", device);
+		free(arm);
+        return NULL;
     }
-    return 0;
+
+    channel->index = index & 0x7f;
+
+    /* Load firmware and hardware versions */
+    int backup = arm_verbose;
+    arm_verbose = 0;
+    channel->speed = speed / 1000;
+
+    if (index & 0x80) idle_op(channel, 255);// Unlock operation
+
+	bv = get_version(channel);
+
+    if (speed == 0) {
+        speed = get_board_speed(bv);
+        //set_spi_speed(arm->fd, speed);
+        /*if (read_regs(channel, 1000, 5, configregs) != 5) {
+            speed = START_SPI_SPEED;
+        }*/
+    }
+    if (arm_verbose>1) printf("ARMINIT: finished pt1:%x\n", bv->sw_version);
+    arm_verbose = backup;
+    if (bv->sw_version) {
+        if (arm_verbose)
+            printf("Board on %s firmware=%d.%d  hardware=%d.%d (%s) (spi %dMHz)\n", device,
+                SW_MAJOR(bv->sw_version), SW_MINOR(bv->sw_version),
+                HW_BOARD(bv->hw_version), HW_MAJOR(bv->hw_version),
+                arm_name(bv->hw_version), speed / 1000000);
+    } else {
+        close(channel->fd);
+		free(arm);
+        return NULL;
+    }
+
+    if (arm_verbose>1) printf("ARMINIT: finished!\n");
+
+	channel->read_regs = read_regs;
+	channel->write_regs = write_regs;
+	channel->read_bits = read_bits;
+	channel->write_bits = write_bits;
+	channel->write_bit = write_bit;
+	channel->close = arm_close;
+	channel->get_version = get_version;
+	channel->firmware_op = firmware_op;
+	channel->finish_firmware = finish_firmware;
+	return channel;
 }
 
-
-void upgrade_firmware_copy_struct(arm_handle* arm)
-{
-    int copy_bit = 1007;
-    write_bit(arm, copy_bit, 1, (arm->index) + 1);    // start copy struct while upgrade firmware from 5.x to 6.x
-    idle_op(arm, 255);// Unlock operation
-    usleep(500000);
-}
-*/

@@ -20,8 +20,9 @@
 #include <math.h>
 #include <fcntl.h>
 
-#include "armspi.h"
-#include "armutil.h"
+//#include "armspi.h"
+//#include "armutil.h"
+#include "kchannel.h"
 #include "virtual_regs.h"
 #include "unipiutil.h"
 
@@ -179,16 +180,16 @@ void set_fp_by_mode(void)
     }
 }
 
-void load_calibrating_const(arm_handle* arm)
+void load_calibrating_const(struct kchannel* channel)
 {
     uint16_t vrefint, vref;
     int n;
 
-    n = read_regs(arm, 1019, 12, (uint16_t*) &calibration);
+    n = channel->read_regs(channel, 1019, 12, (uint16_t*) &calibration);
     if (n != 12) return;
-    n = read_regs(arm, 1009, 1, &vrefint);
+    n = channel->read_regs(channel, 1009, 1, &vrefint);
     if (n != 1) return;
-    n = read_regs(arm, 5, 1,  &vref);
+    n = channel->read_regs(channel, 5, 1,  &vref);
     if (n != 1) return;
     vmul2 =  (3.3 * vrefint) / vref /4096;
     vmul0 = vmul1 = vmul2 * 3;
@@ -212,18 +213,20 @@ void load_calibrating_const(arm_handle* arm)
 }
 
 
-int read_virtual_regs(arm_handle* arm, uint16_t reg, uint8_t cnt, uint16_t* result)
+int read_virtual_regs(struct kchannel* channel, uint16_t reg, uint8_t cnt, uint16_t* result)
 {
     int n, r0;
     uint16_t registers[3];
-
-    if (arm && ((HW_BOARD(arm->bv.base_hw_version)==0)||(HW_BOARD(arm->bv.base_hw_version)==0xd))) { //
+	Tboard_version *bv;
+	if (channel == NULL) return 0;
+	bv = channel->get_version(channel);
+    if ((HW_BOARD(bv->base_hw_version)==0)||(HW_BOARD(bv->base_hw_version)==0xd)) { //
         if ((reg >= 3000) && (reg+cnt <= 3006)) { // Area of SW computed float values form Brain
             if (! loaded) {
-                load_calibrating_const(arm);
+                load_calibrating_const(channel);
                 if (! loaded) return -1;
             }
-            n = read_regs(arm, 2, 3, registers);         // ao, ai1, ai2
+            n = channel->read_regs(channel, 2, 3, registers);         // ao, ai1, ai2
             if (n != 3) return -1;                       // illegal value
             fvalues[2] = ai2_reg2float(registers[2]);    // must be first
             fvalues[1] = ai1_reg2float(registers[1]);
@@ -303,50 +306,56 @@ int read_pure_virtual_regs(uint16_t reg, uint8_t cnt, uint16_t* result)
 
 }
 
-int write_virtual_regs(arm_handle* arm, uint16_t reg, uint8_t cnt, uint16_t* values)
+int write_virtual_regs(struct kchannel* channel, uint16_t reg, uint8_t cnt, uint16_t* values)
 {
     float fval;
     uint32_t swapped;
     uint16_t regval;
-    if (arm && ((HW_BOARD(arm->bv.base_hw_version)==0)||(HW_BOARD(arm->bv.base_hw_version)==0xd))) {
+	Tboard_version *bv;
+	if (channel == NULL) return 0;
+	bv = channel->get_version(channel);
+    if ((HW_BOARD(bv->base_hw_version)==0)||(HW_BOARD(bv->base_hw_version)==0xd)) { //
         if ((reg >= 3000) && (reg+cnt <= 3006)) {
             if (! loaded) {
-                load_calibrating_const(arm);
+                load_calibrating_const(channel);
                 if (! loaded) return -1;
             }
             if ((reg==3000) && (cnt >=2)) {
                 fval = *((float*)values);
                 vvprintf("VIRTUAL REGS write fval=%f\n",fval);
                 regval = ao_float2reg(fval);
-                if (write_regs(arm, 2, 1, &regval)!=1) return -1;
+                if (channel->write_regs(channel, 2, 1, &regval)!=1) return -1;
                 return cnt;
             } else {
                 return -1;
             }
         } else if ((reg == 3006) && (cnt==2)) {
             if (! loaded) {
-                load_calibrating_const(arm);
+                load_calibrating_const(channel);
                 if (! loaded) return -1;
             }
             swapped = (uint32_t)(*(values+1) | (*(values) << 16));
             fval = *((float*) &swapped);
             vvprintf("VIRTUAL REGS write fval=%f\n",fval);
             regval = ao_float2reg(fval);
-            if (write_regs(arm, 2, 1, &regval)!=1) return -1;
+            if (channel->write_regs(channel, 2, 1, &regval)!=1) return -1;
             return cnt;
         }
     }
     return 0;
 }
 
-void monitor_virtual_regs(arm_handle* arm, uint16_t reg, uint16_t* result)
+void monitor_virtual_regs(struct kchannel* channel, uint16_t reg, uint16_t* result)
 {
-    if ((arm == NULL) || ((HW_BOARD(arm->bv.base_hw_version)!=0)&&(HW_BOARD(arm->bv.base_hw_version)!=0xd)))
+	Tboard_version *bv;
+	if (channel == NULL) return;
+	bv = channel->get_version(channel);
+    if ((HW_BOARD(bv->base_hw_version)!=0)&&(HW_BOARD(bv->base_hw_version)!=0xd))
         return;
     // do only for Brain
     if (reg == 1019) {
         if (! loaded) {
-            load_calibrating_const(arm);
+            load_calibrating_const(channel);
             if (! loaded) return;
         }
         calibration.ao_sw = *result;
@@ -354,7 +363,7 @@ void monitor_virtual_regs(arm_handle* arm, uint16_t reg, uint16_t* result)
         vvprintf("VIRTUAL REGS ao mode=%d\n",calibration.ao_sw);
     } else if (reg == 1024) {
         if (! loaded) {
-            load_calibrating_const(arm);
+            load_calibrating_const(channel);
             if (! loaded) return;
         }
         calibration.ai_sw = *result;
@@ -363,7 +372,7 @@ void monitor_virtual_regs(arm_handle* arm, uint16_t reg, uint16_t* result)
     }
 }
 
-void monitor_virtual_coils(arm_handle* arm, uint16_t reg, uint8_t* values, uint16_t cnt, int platform)
+void monitor_virtual_coils(struct kchannel* channel, uint16_t reg, uint8_t* values, uint16_t cnt, int platform)
 {
 
     char* gpio_1w_reset_path = NULL;
