@@ -15,7 +15,7 @@
 #include <modbus/modbus.h>
 #include <modbus/modbus-tcp.h>
 
-#include "armspi.h"
+#include "kchannel.h"
 
 #define MAX_ARMS 3
 // from modbus_private_h
@@ -28,12 +28,6 @@
 #define VIRTUAL_COILS_NANOPI 1
 #define VIRTUAL_COILS_ZULU 2
 
-#define PAGE_SIZE   1024
-#define REG_SIZE    64
-
-#define MAX_FW_SIZE (64*PAGE_SIZE)
-#define MAX_RW_SIZE (PAGE_SIZE)
-#define RW_START_PAGE ((0xE000) / PAGE_SIZE)
 
 // from modbus_h
 /* Modbus function codes */
@@ -53,23 +47,21 @@
 
 typedef struct {
     modbus_t* ctx;
-    arm_handle* arm[MAX_ARMS];
-    char * fwdir;
+    //arm_handle* arm[MAX_ARMS];
+	struct kchannel* channel;
 } nb_modbus_t;
 
 #define DFR_NONE 0
 #define DFR_OP_FIRMWARE 1
 
 extern int deferred_op;
-extern arm_handle*  deferred_arm;
+//extern arm_handle*  deferred_arm;
 extern int verbose;
 
 nb_modbus_t*  nb_modbus_new_tcp(const char *ip_address, int port);
 void nb_modbus_free(nb_modbus_t*  nb_ctx);
 int nb_modbus_reqlen(uint8_t* data, uint8_t size);
 int nb_modbus_reply(nb_modbus_t *nb_ctx, uint8_t *req, int req_length, int broadcast_address);
-int add_arm(nb_modbus_t*  nb_ctx, uint8_t index, const char *device, int speed);
-//int load_fw(char *path, uint8_t* prog_data, const size_t len);
-//int arm_firmware(arm_handle* arm, const char* fwdir);
-//int arm_firmware_do(arm_handle* arm, const char* fwdir, int rw);
+struct kchannel* add_channel(nb_modbus_t*  nb_ctx, uint8_t index, const char *device, int speed);
+struct kchannel* get_channel(nb_modbus_t*  nb_ctx, uint8_t index);
 #endif

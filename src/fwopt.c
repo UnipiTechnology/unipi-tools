@@ -51,6 +51,7 @@ static struct option long_options[] = {
 #ifdef FWSPI
   {"spidev",  no_argument,      0, 's'},
   {"index", required_argument,	0, 'i'},
+  {"unit", required_argument,	0, 'u'},
 #endif
   {0, 0, 0, 0}
 };
@@ -71,10 +72,11 @@ void print_usage(char *argv0)
 #endif
 #ifdef FWSPI
     printf("\nUtility for Programming UniPi devices via SPI\n");
-    printf("%s [-v] -a [-s <spidevice>] [ -i <index>] [-b <baudrate>] [-d <firmware dir>]\n", argv0);
-    printf("%s [-vPRC] [-s <spidevice>] -i <index> [-b <baudrate>] [-d <firmware dir>] [-F <upper board id>]\n", argv0);
+    printf("%s [-v] -a [-s <spidevice> | -i <index> | -u <unit> ] [-b <baudrate>] [-d <firmware dir>]\n", argv0);
+    printf("%s [-vPRC] [-s <spidevice> | -i <index> | -u <unit> ] [-b <baudrate>] [-d <firmware dir>] [-F <upper board id>]\n", argv0);
     printf("\n");
-    printf("--index <index>\t\t [0...n] device index\n");
+    printf("--index <index>\t\t [0...n] device index (for kernel mod < 2.0)\n");
+    printf("--unit  <unit>\t\t [1...254] device modbus adress (for kernel mod >= 2.0)\n");
     printf("--spidev <spidev>\t\t /dev/unipispi \n");
     printf("--baud <baudrate>\t default 10000000\n");
 #endif
@@ -93,13 +95,17 @@ void print_usage(char *argv0)
 char* shortopt = "vVPRUDCp:b:u:d:F:t:o:";
 #endif
 #ifdef FWSPI
-char* shortopt = "avPRUCs:b:d:F:i:";
+char* shortopt = "avPRUCs:b:d:F:i:u:";
 #endif
 
 int parseopt(int argc, char **argv)
 {
     // Parse command line options
     int c;
+    int unit = -1;
+#ifdef FWSPI
+    char buf[256];
+#endif
     char *endptr;
     while (1) {
        int option_index = 0;
@@ -157,10 +163,20 @@ int parseopt(int argc, char **argv)
 #ifdef FWSPI
        case 's':
            com_options.PORT = strdup(optarg);
+           unit = 0;
            break;
        case 'i':
-    	   com_options.DEVICE_ID = atoi(optarg);
-    	   break;
+           com_options.DEVICE_ID = atoi(optarg);
+           break;
+       case 'u':
+           unit = atoi(optarg);
+           if (unit==0 || unit > 254) {
+               eprintf("Unit must be non-zero integer and less than 255 (given %s)\n", optarg);
+               return 1;
+           }
+           sprintf(buf, "/dev/unipimodbus%d", unit);
+           com_options.PORT = strdup(buf);
+           break;
 #endif
 #ifdef FWSERIAL
        case 'V':
@@ -215,10 +231,10 @@ int parseopt(int argc, char **argv)
         print_usage(argv[0]);
         return 1;
     }
-    if ((com_options.DEVICE_ID) < 0 && ! do_auto) {
-        eprintf("Device index must be defined\n");
+    if ((com_options.DEVICE_ID) < 0 && ! do_auto && unit == -1) {
+        eprintf("Device index or unit or spidev must be defined\n");
         print_usage(argv[0]);
         return 1;
-	}
+    }
     return 0;
 }

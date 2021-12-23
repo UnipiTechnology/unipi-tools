@@ -35,8 +35,8 @@
 //Library_error "YOU NEED libmodbus version min 3.1.4"
 #endif
 
-int deferred_op = DFR_NONE;
-arm_handle*  deferred_arm;
+//int deferred_op = DFR_NONE;
+//arm_handle*  deferred_arm;
 
 
 /* Internal use */
@@ -45,6 +45,9 @@ arm_handle*  deferred_arm;
 /* Max between RTU and TCP max adu length (so TCP) */
 #define MAX_MESSAGE_LENGTH 260
 
+
+struct kchannel* channel_init(const char* device, int index, uint32_t speed);
+struct kchannel* arm_init(const char* device, int index, uint32_t speed);
 
 int nb_modbus_reqlen(uint8_t* data, uint8_t size)
 {
@@ -100,7 +103,7 @@ int nb_modbus_reply(nb_modbus_t *nb_ctx, uint8_t *req, int req_length, int broad
     int n;
     uint16_t address;
     uint8_t* rsp = req;
-    arm_handle* arm;
+    struct kchannel* channel;
     int rsp_length = 0;
 
     if (nb_ctx == NULL) {
@@ -133,11 +136,15 @@ int nb_modbus_reply(nb_modbus_t *nb_ctx, uint8_t *req, int req_length, int broad
             slave = 1;
         }
     }
-    if (slave <= MAX_ARMS) {
+    /*if (slave <= MAX_ARMS) {
         arm = nb_ctx->arm[slave-1];
     } else {
         arm = NULL;
-    }
+    }*/
+	channel = get_channel(nb_ctx, slave);
+	if (channel == NULL) {
+		channel = add_channel(nb_ctx, slave, NULL, 0);
+	}
     /*if (arm == NULL) {
         return nb_response_exception(
             nb_ctx->ctx, MODBUS_EXCEPTION_GATEWAY_TARGET, rsp,
@@ -154,7 +161,7 @@ int nb_modbus_reply(nb_modbus_t *nb_ctx, uint8_t *req, int req_length, int broad
                 "Illegal nb of values %d in read_bits (max %d)\n", nb, MODBUS_MAX_READ_BITS);
         } else {
             rsp[rsp_length++] = (nb / 8) + ((nb % 8) ? 1 : 0);
-            int n = read_bits(arm, address, nb, rsp+rsp_length);
+            int n = (channel==NULL) ? -1 : channel->read_bits(channel, address, nb, rsp+rsp_length);
             if (n >= nb) {
                 rsp_length += (nb / 8) + ((nb % 8) ? 1 : 0);
             } else if (n < 0) {
@@ -184,14 +191,13 @@ int nb_modbus_reply(nb_modbus_t *nb_ctx, uint8_t *req, int req_length, int broad
 
             rsp[rsp_length++] = nb << 1;
             if ((address >= OFFSET_V_REGS) && (address < OFFSET_PV_REGS)) {
-                n = read_virtual_regs(arm, address, nb, (uint16_t*) (rsp+rsp_length));
+                n = read_virtual_regs(channel, address, nb, (uint16_t*) (rsp+rsp_length));
             } else if((address >= OFFSET_PV_REGS)){
             	n = read_pure_virtual_regs(address, nb,  (uint16_t*) (rsp+rsp_length));
             }
             else {
-                n = read_regs(arm, address, nb, (uint16_t*) (rsp+rsp_length));
+                n =  (channel==NULL) ? -1 : channel->read_regs(channel, address, nb, (uint16_t*) (rsp+rsp_length));
             }
-
 
             if (n == nb) {
                 for (i = address; i < address + nb; i++) {
@@ -223,10 +229,10 @@ int nb_modbus_reply(nb_modbus_t *nb_ctx, uint8_t *req, int req_length, int broad
                 nb_ctx->ctx, MODBUS_EXCEPTION_ILLEGAL_DATA_ADDRESS, rsp,
                 "Illegal data address 0x%0X in write_coil\n", address);
         } else {
-            n = write_bit(arm, address, data ? 1 : 0, 0);
-            if (arm && arm->has_virtual_coils && (address == 1001)) {
+            n =  (channel==NULL) ? -1 : channel->write_bit(channel, address, data ? 1 : 0, 0);
+            if (channel && channel->has_virtual_coils && (address == 1001)) {
                 data = data ? 1 : 0;
-                monitor_virtual_coils(arm, address, (uint8_t*)(&data), 1, arm->has_virtual_coils); // monitoring coil changes
+                monitor_virtual_coils(channel, address, (uint8_t*)(&data), 1, channel->has_virtual_coils); // monitoring coil changes
             }
             if (n == 1) {
                 rsp_length += 4; // = req_length;
@@ -246,14 +252,14 @@ int nb_modbus_reply(nb_modbus_t *nb_ctx, uint8_t *req, int req_length, int broad
         uint16_t data = (req[offset + 3] << 8) + req[offset + 4];
 
         if ((address >= 3000) && (address < 4000)) {
-            n = write_virtual_regs(arm, address, 1, &data);
+            n = write_virtual_regs(channel, address, 1, &data);
         } else {
-            n = write_regs(arm, address, 1, &data);
+            n = (channel==NULL) ? -1 : channel->write_regs(channel, address, 1, &data);
         }
         if (n == 1) {
             rsp_length += 4; // = req_length;
             if ((address == 1019) || (address==1024)) {    // monitoring register changes
-                monitor_virtual_regs(arm, address, &data);
+                monitor_virtual_regs(channel, address, &data);
             }
         } else if (n < 0) {
         	rsp_length = nb_response_exception(
@@ -279,10 +285,10 @@ int nb_modbus_reply(nb_modbus_t *nb_ctx, uint8_t *req, int req_length, int broad
                 "Illegal data address 0x%0X in write_coils\n", address);
         } else {
             /* 6 = byte count */
-            n = write_bits(arm, address, nb, rsp+rsp_length + 5);
+            n = (channel==NULL) ? -1 : channel->write_bits(channel, address, nb, rsp+rsp_length + 5);
             if ( n == nb ) {
-                if (arm && arm->has_virtual_coils && (address <= 1001) && (address+nb > 1001)) {
-                    monitor_virtual_coils(arm, address, rsp+rsp_length + 5, nb, arm->has_virtual_coils); // monitoring coil changes
+                if (channel && channel->has_virtual_coils && (address <= 1001) && (address+nb > 1001)) {
+                    monitor_virtual_coils(channel, address, rsp+rsp_length + 5, nb, channel->has_virtual_coils); // monitoring coil changes
                 }
                 rsp_length += 4;
             } else if (n < 0) {
@@ -315,16 +321,16 @@ int nb_modbus_reply(nb_modbus_t *nb_ctx, uint8_t *req, int req_length, int broad
             }
 
             if ((address >= 3000) && (address < 4000)) {
-                n = write_virtual_regs(arm, address, nb, (uint16_t*)(rsp + rsp_length + 5));
+                n = write_virtual_regs(channel, address, nb, (uint16_t*)(rsp + rsp_length + 5));
             } else {
-                n = write_regs(arm, address, nb, (uint16_t*)(rsp + rsp_length + 5));
+                n = (channel==NULL) ? -1 : channel->write_regs(channel, address, nb, (uint16_t*)(rsp + rsp_length + 5));
             }
             if (n == nb) {
                 if ((address <= 1019)&&(address+nb>1019)) {
-                    monitor_virtual_regs(arm, 1019, (uint16_t*)(rsp + rsp_length + 5 + (1019-address))); // monitoring register changes
+                    monitor_virtual_regs(channel, 1019, (uint16_t*)(rsp + rsp_length + 5 + (1019-address))); // monitoring register changes
                 }
                 if ((address <= 1024)&&(address+nb>1024)) {
-                    monitor_virtual_regs(arm, 1024, (uint16_t*)(rsp + rsp_length + 5 + (1024-address))); // monitoring register changes
+                    monitor_virtual_regs(channel, 1024, (uint16_t*)(rsp + rsp_length + 5 + (1024-address))); // monitoring register changes
                 }
                 rsp_length += 4; // = req_length;
             } else if (n < 0) {
@@ -390,126 +396,91 @@ nb_modbus_t* nb_modbus_new_tcp(const char *ip_address, int port)
 
 void nb_modbus_free(nb_modbus_t*  nb_ctx)
 {
-    if (nb_ctx != NULL) {
-        int i;
-        modbus_free(nb_ctx->ctx);
-        for (i=0; i<MAX_ARMS; i++) {
-            if (nb_ctx->arm[i] != NULL) {
-                close(nb_ctx->arm[i]->fd);
-                free(nb_ctx->arm[i]);
-            }
-        }
-        free(nb_ctx);
-    }
+	struct kchannel *c, *next;
+	if (nb_ctx != NULL) {
+		modbus_free(nb_ctx->ctx);
+		c = nb_ctx->channel;
+		while (c != NULL) {
+			next = c->next;
+			c->close(c);
+			c = next;
+		}
+		free(nb_ctx);
+	}
 }
 
+#define UNIPICHANNELNAME "/dev/unipichannel%d"
 
-int add_arm(nb_modbus_t*  nb_ctx, uint8_t index, const char *device, int speed)
+struct kchannel* add_channel(nb_modbus_t*  nb_ctx, uint8_t index, const char *device, int speed)
 {
-    if (index >= MAX_ARMS) 		// Too many devices
+	char channelname[sizeof(UNIPICHANNELNAME)+3];
+	const char *filename;
+	struct kchannel *channel, *c, **last;
+	struct kchannel* (*init_func) (const char*,int,uint32_t);
+
+	int ret;
+/*    if (index >= MAX_ARMS) 		// Too many devices
         return -1;
-
-    arm_verbose = verbose;
-    arm_handle* arm = calloc(1, sizeof(arm_handle));	// Allocate and zero-init the arm_handle struct
-
-    if (arm == NULL) // Allocation failed
-        return -1;
-
-    if (arm_init(arm, device, speed, index) == 0) {
-        nb_ctx->arm[index] = arm;
-    } else {
-        free(arm);
-        return -1;
-    }
-    return 0;
-}
-
-
-/*int load_fw(char *path, uint8_t* prog_data, const size_t len)
-{
-    FILE* fd;
-    int red;
-    fd = fopen(path, "rb");
-    if (!fd) {
-        printf("error opening firmware file \"%s\"\n", path);
-        return -1;
-    }
-    memset(prog_data, 0xff, len);
-
-    red = fread(prog_data, 1, MAX_FW_SIZE, fd);
-    //printf("Bytes 58: %d,59: %d,60: %d,61: %d,62: %d,63: %d,64: %d\n", prog_data[58], prog_data[59], prog_data[60], prog_data[61], prog_data[62], prog_data[63]);
-    fclose(fd);
-    return red;
-}
 */
+	arm_verbose = verbose;
+	sprintf(channelname, UNIPICHANNELNAME, index);
 
-/*
-#define MAX_R2000  64
-int arm_firmware_do(arm_handle* arm, const char* fwdir, int overwrite)
-{
-
-    uint8_t *prog_data;   // buffer containing firmware
-    uint8_t* rw_data;     // buffer containing firmware rw data
-    int prog_data_len;
-    int rw_data_len;
-    uint16_t buffer[MAX_R2000];
-    int n2000;
-
-
-    rw_data = load_fw_file(&arm->bv, fwdir, TRUE, &rw_data_len);
-    if (rw_data == NULL) {
-        return -1;
-    }
-    prog_data = load_fw_file(&arm->bv, fwdir, FALSE, &prog_data_len);
-    if (prog_data == NULL) {
-        free(rw_data);
-        return -1;
-    }
-
-    if (!overwrite) {
-        n2000 = read_regs(arm, 2000, MAX_R2000, buffer);
-        vprintf("N2000 = %d\n", n2000);
-        if (n2000 > 1) {
-            n2000 = 2*(n2000);
-            if (n2000 >= rw_data_len) n2000 = rw_data_len-2;
-            memcpy(rw_data, buffer, n2000);
-            overwrite = 1;
-        }
-    }
-    start_firmware(arm);
-    if (arm->bv.sw_version < 0x0600) {
-        //patch_first_page_downgrade(header, prog_data);
-    }
-    send_firmware(arm, prog_data, prog_data_len, 0);
-//    vprintf("Sending nvram file %s length=%d\n", fwname_rw, rw_data_len);
-
-    if (overwrite)  {
-        vprintf("\n");
-        send_firmware(arm, rw_data, rw_data_len, 0xe000);
-    }
-    finish_firmware(arm);
-    free(prog_data);
-    free(rw_data);
-    // Reload version
-    uint16_t configregs[5];
-    if (read_regs(arm, 1000, 5, configregs) == 5) {
-        parse_version(&arm->bv, configregs);
-        return 0;
-    }
-    else
-        return -1;
+	ret = access(channelname, R_OK | W_OK);
+	if (ret == 0) {
+		filename = channelname;
+		init_func = channel_init;
+	} else if (device==NULL) {
+		return NULL;
+	} else {
+		filename = device;
+		ret = access(device, R_OK | W_OK);
+		if (ret == 0) {
+			init_func = arm_init;
+		} else {
+			//printf("Error open file %s, %s\n", filename, strerror(ret));
+			return NULL;
+		}
+	}
+	channel = init_func(filename, index, speed);
+	if (channel == NULL) return NULL;
+	c = nb_ctx->channel;
+	last = &nb_ctx->channel;
+	while (c != NULL) {
+		if (c->index <  index) break;
+		last = &c->next;
+		c = c->next;
+	}
+	channel->next = c;
+	*last = channel;
+	return channel;
 }
 
-*/
-/*
-int arm_firmware(arm_handle* arm, const char* fwdir)
+void delete_channel(nb_modbus_t*  nb_ctx, int index)
 {
-    // Check version 
-    uint32_t fwver;
-
-    if ((fwver=check_new_rw_version(&arm->bv, fwdir))) {
-        vprintf("NEW firmware=%d.%d found\n", fwver>>8, fwver & 0xff);
-        return arm_firmware_do(arm, fwdir, FALSE);
-    }
+	struct kchannel *c, **last;
+	c = nb_ctx->channel;
+	last = &nb_ctx->channel;
+	while (c != NULL) {
+		if (c->index == index) {
+			*last = c->next;
+			c->close(c);
+			return;
+		}
+		if (c->index > index) break;
+		last = &c->next;
+		c = c->next;
+	}
 }
-*/
+
+struct kchannel* get_channel(nb_modbus_t*  nb_ctx, uint8_t index)
+{
+	struct kchannel *c;
+	c = nb_ctx->channel;
+	while (c != NULL) {
+		if (c->index == index) break;
+		if (c->index > index) return NULL;
+		c = c->next;
+	}
+	return c;
+}
+

@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 #include <linux/spi/spidev.h>
+#include "kchannel.h"
 #include "armutil.h"
 
 // brain/spi.h
@@ -46,8 +47,8 @@ typedef struct {
     uint8_t  remain;
 } __attribute__((packed)) arm_comm_str_header;
 
-#define ARM_PAGE_SIZE      1024
-#define ARM_FIRMWARE_KEY   0xAA99FF33
+//#define ARM_PAGE_SIZE      1024
+//#define ARM_FIRMWARE_KEY   0xAA99FF33
 typedef struct {
     uint32_t  address;
     uint8_t   data[ARM_PAGE_SIZE];
@@ -63,34 +64,34 @@ typedef struct {
 
 
 typedef struct {
-    int fd;
-    int index;
+	struct kchannel channel;
+    //int fd;
+    //int index;
     uint8_t tx2[SNIPLEN2 + CRC_SIZE + 40];
     uint8_t rx2[SNIPLEN2 + CRC_SIZE + 40];
-    Tboard_version bv;
-    int speed;
-	int has_virtual_coils;
+    //Tboard_version bv;
+    //int speed;
+	//int has_virtual_coils;
 }  arm_handle;
 
 
-int arm_init(arm_handle* arm, const char* device, uint32_t speed, int index);
-int read_regs(arm_handle* arm, uint16_t reg, uint8_t cnt, uint16_t* result);
-int write_regs(arm_handle* arm, uint16_t reg, uint8_t cnt, uint16_t* values);
-int read_bits(arm_handle* arm, uint16_t reg, uint16_t cnt, uint8_t* result);
-int write_bit(arm_handle* arm, uint16_t reg, uint8_t value, uint8_t do_lock);
-int write_bits(arm_handle* arm, uint16_t reg, uint16_t cnt, uint8_t* values);
-int write_char(arm_handle* arm, uint8_t uart, uint8_t c);
-int write_string(arm_handle* arm, uint8_t uart, uint8_t* str, int len);
-int read_string(arm_handle* arm, uint8_t uart, uint8_t* str, int cnt);
-uint32_t firmware_op(arm_handle* arm, uint32_t address, uint8_t* tx_data, int tx_len);
+struct kchannel* arm_init(const char* device, int index, uint32_t speed);
+//int arm_init(arm_handle* arm, const char* device, uint32_t speed, int index);
+//int read_regs(arm_handle* arm, uint16_t reg, uint8_t cnt, uint16_t* result);
+//int write_regs(arm_handle* arm, uint16_t reg, uint8_t cnt, uint16_t* values);
+//int read_bits(arm_handle* arm, uint16_t reg, uint16_t cnt, uint8_t* result);
+//int write_bit(arm_handle* arm, uint16_t reg, uint8_t value, uint8_t do_lock);
+//int write_bits(arm_handle* arm, uint16_t reg, uint16_t cnt, uint8_t* values);
+//int write_char(arm_handle* arm, uint8_t uart, uint8_t c);
+//int write_string(arm_handle* arm, uint8_t uart, uint8_t* str, int len);
+//int read_string(arm_handle* arm, uint8_t uart, uint8_t* str, int cnt);
+//uint32_t firmware_op(arm_handle* arm, uint32_t address, uint8_t* tx_data, int tx_len);
 
-void start_firmware(arm_handle* arm);
-void confirm_firmware(arm_handle* arm);
+//void start_firmware(arm_handle* arm);
+//void confirm_firmware(arm_handle* arm);
 //int send_firmware(arm_handle* arm, uint8_t* data, size_t datalen, uint32_t start_address);
-void finish_firmware(arm_handle* arm);
+//void finish_firmware(arm_handle* arm);
 //void upgrade_firmware_copy_struct(arm_handle* arm);
 
-extern int arm_verbose;
-extern int nss_pause;
 
 #endif

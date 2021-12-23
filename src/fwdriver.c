@@ -10,26 +10,38 @@
 #include "fwdriver.h"
 
 #ifdef FWSPI
+
+#include <sys/file.h>
 #include "armspi.h"
+
+struct kchannel* arm_init(const char* device, int index, uint32_t speed);
+struct kchannel* channel_init(const char* device, int index, uint32_t speed);
+
 void* fwspi_open(struct comopt_struct *comopt)
 {
 #define UNLOCK_FLAG 0x80
-    arm_handle* arm = malloc(sizeof(arm_handle));
-    arm_verbose=verbose;
-    if (arm_init(arm, comopt->PORT , comopt->BAUD, comopt->DEVICE_ID | UNLOCK_FLAG) < 0) {
-        if (verbose >=0)
-            eprintf("Unable to create the arm[%d] context\n", comopt->DEVICE_ID);
-        free(arm);
-        return NULL;
-    }
-	return arm;
+	//arm_handle* arm = malloc(sizeof(arm_handle));
+	struct kchannel* channel;
+
+	arm_verbose=verbose;
+	if ( comopt->DEVICE_ID == -1) {
+		channel = channel_init(comopt->PORT , -1, comopt->BAUD);
+		if (channel==NULL && verbose >=0)
+			eprintf("Unable to open device file %s\n", comopt->PORT);
+	} else {
+		channel = arm_init(comopt->PORT , (comopt->DEVICE_ID+1) | UNLOCK_FLAG, comopt->BAUD);
+		if (channel==NULL && verbose >=0)
+			eprintf("Unable to create the arm[%d] context\n", comopt->DEVICE_ID);
+	}
+
+	return channel;
 }
 
 void fwspi_close(void* channel)
-{   
-    arm_handle* arm = channel;
-	close(arm->fd);
-	free(arm);
+{
+	struct kchannel* kchannel = channel;
+	if (kchannel)
+		kchannel->close(kchannel);
 }
 
 void fwspi_reopen(void* channel, struct comopt_struct *comopt)
@@ -37,48 +49,70 @@ void fwspi_reopen(void* channel, struct comopt_struct *comopt)
 
 Tboard_version* fwspi_identify(void* channel)
 {
-    arm_handle* arm = channel;
-	uint16_t r1000[5];
-    if (read_regs(arm, 1000, 5, r1000) != 5) {
-        eprintf("Identity registers reading failed\n");
-		return NULL;
+	struct kchannel *kchannel = channel;
+	Tboard_version *bv;
+	if (kchannel) {
+		bv = kchannel->get_version(kchannel);
+		if (!bv || bv->sw_version==0)
+			return NULL;
+		return bv;
 	}
-    parse_version(&arm->bv, r1000);
-	return &arm->bv;
+	return NULL;
 }
 
 int fwspi_start(void* channel)
 {
-    arm_handle* arm = channel;
-	start_firmware(arm);
+	struct kchannel *kchannel = channel;
+	int ret;
+	Tboard_version *bv;
+	int prog_bit = 1004;
+	if (kchannel) {
+		ret = flock(kchannel->fd, LOCK_EX);
+		if (ret < 0) {
+			vprintf_1("Error lock %d", ret);
+			return ret;
+		}
+		bv = kchannel->get_version(kchannel);
+		if (bv->sw_version <= 0x400) prog_bit = 104;
+		kchannel->write_bit(kchannel, prog_bit, 1, (kchannel->index));
+		usleep(100000);
+	}
 	return 0;
 }
 
 
 int fwspi_run(void* channel)
 {
-    arm_handle* arm = channel;
-	finish_firmware(arm);
+	struct kchannel *kchannel = channel;
+	if (kchannel) {
+		kchannel->finish_firmware(kchannel);
+		flock(kchannel->fd, LOCK_UN);
+	}
 	return 0;
 }
 
-int fwspi_confirm(void* channel, int resetrw)
+int fwspi_confirm(void* channel) //, int resetrw)
 {
-    arm_handle* arm = channel;
-	confirm_firmware(arm);
-    return 0;;
+	struct kchannel *kchannel = channel;
+    int prog_bit = 1004;
+	if (kchannel) {
+		kchannel->write_bit(kchannel, prog_bit, 0, 0);
+		usleep(100000);
+	}
+    return 0;
 }
 
 int fwspi_reboot(void* channel)
 {
-    arm_handle* arm = channel;
-    write_bit(arm, 1002, 1, 0);
-    return 0;
+	struct kchannel* kchannel = channel;
+	if (kchannel)
+		kchannel->write_bit(kchannel, 1002, 1, 0);
+	return 0;
 }
 
 int  fwspi_flash(void* channel, struct page_description *pd_array, int count, int action)
 {
-    arm_handle* arm = channel;
+	struct kchannel* kchannel = channel;
     int i, err, loop, prev_i, rx_result;
 
 	loop = 0;
@@ -88,7 +122,7 @@ int  fwspi_flash(void* channel, struct page_description *pd_array, int count, in
 		err = 0;
 		for (i=0; i<count; i++) {
 			if (pd_array[i].errors >= 0) {
-				rx_result = firmware_op(arm, pd_array[i].flash_addr, pd_array[i].data, PAGE_SIZE);
+				rx_result = kchannel->firmware_op(kchannel, pd_array[i].flash_addr, pd_array[i].data, PAGE_SIZE);
 				if (prev_i >= 0) {
 					if (rx_result == ARM_FIRMWARE_KEY) {
 						pd_array[prev_i].errors = -1;
@@ -105,7 +139,7 @@ int  fwspi_flash(void* channel, struct page_description *pd_array, int count, in
 		}
 		if (!err && (prev_i >= 0)) {
 			// send fake page to know result of last page;
-			rx_result = firmware_op(arm, 0xF201, NULL, 0);
+			rx_result = kchannel->firmware_op(kchannel, 0xF201, NULL, 0);
 			if (rx_result == ARM_FIRMWARE_KEY) {
 				pd_array[prev_i].errors = -1;
 				vprintf_1("\r%04x OK ", pd_array[prev_i].flash_addr);

@@ -55,8 +55,6 @@ const char* version_string = PROJECT_VER;
 char* spi_devices[MAX_ARMS] = {"/dev/unipispi","/dev/unipispi","/dev/unipispi"};
 int spi_speed[MAX_ARMS] = {0,0,0};
 char* gpio_int[MAX_ARMS] = { "27", "23", "22" };
-char* firmwaredir = "/opt/unipi/firmware";
-//int do_check_fw = 0;
 int broadcast_address = 0;
 
 #define MAXEVENTS 64
@@ -284,8 +282,6 @@ static struct option long_options[] = {
   {"nsspause", required_argument, 0, 'n'},
   {"spidev", required_argument, 0, 's'},
   {"bauds",required_argument, 0, 'b'},
-/*  {"fwdir", required_argument, 0, 'f'},
-  {"check-firmware", no_argument,0, 'c'},*/
   {"broadcast-address", required_argument, 0, 'a'},
   {"info", no_argument, 0, 'i'},
   {0, 0, 0, 0}
@@ -371,6 +367,7 @@ int main(int argc, char *argv[])
     int wdtimesec = -1;
     unsigned long lasttimesec = time(NULL);
     char* wdenv = getenv("WATCHDOG_USEC");
+	struct kchannel *channel;
 
      // Options
     int c;
@@ -428,12 +425,6 @@ int main(int argc, char *argv[])
                exit(EXIT_FAILURE);
            }
            break;
-/*       case 'f':
-           firmwaredir = strdup(optarg);
-           break;
-       case 'c':
-           do_check_fw = 1;
-           break;*/
        case 'a':
     	   broadcast_address = atoi(optarg);
     	   if (broadcast_address < 0 || broadcast_address > 255) {
@@ -458,21 +449,17 @@ int main(int argc, char *argv[])
     }
 
     nb_ctx = nb_modbus_new_tcp(listen_address, tcp_port);
-    nb_ctx->fwdir = firmwaredir;
 
 
     /* Create arm handles */
     int ai;
     for (ai=0; ai<MAX_ARMS; ai++) {
-        nb_ctx->arm[ai] = NULL;
+        //nb_ctx->arm[ai] = NULL;
         char* dev=spi_devices[ai];
         if ((dev != NULL) && (strlen(dev)>0)) {
             int speed = spi_speed[ai];
             if (!(speed > 0)) speed = spi_speed[0];
-            add_arm(nb_ctx, ai, dev, speed);
-            /*if (nb_ctx->arm[ai] && do_check_fw) {
-                arm_firmware(nb_ctx->arm[ai], firmwaredir);
-            }*/
+            add_channel(nb_ctx, ai+1, dev, speed);
         }
     }
 
@@ -482,18 +469,19 @@ int main(int argc, char *argv[])
     else
 	    vvprintf("Running on unipi_model %s\n", unipi_model);
 
-    if (nb_ctx->arm[0]) {
+	channel = get_channel(nb_ctx, 1);
+	if (channel) {
 		/* Check UniPi Model */
 		if ((strncmp(unipi_model, "S205",4) == 0) || (strncmp(unipi_model, "S505",4) == 0)) { /* models with N-1001 have 1W reset via GPIO18 */
 			if (verbose) printf("Using virtual coil 1001 on gpio18\n");
-			nb_ctx->arm[0]->has_virtual_coils = VIRTUAL_COILS_NANOPI;
+			channel->has_virtual_coils = VIRTUAL_COILS_NANOPI;
 			system("echo 18 >/sys/class/gpio/export; echo out >/sys/class/gpio/gpio18/direction; echo 1 >/sys/class/gpio/gpio18/value");
 		}
-                else if((strncmp(unipi_model, "S207",4) == 0)){
+		else if((strncmp(unipi_model, "S207",4) == 0)){
 			if (verbose) printf("Using virtual coil 1001 on gpio149\n");
-			nb_ctx->arm[0]->has_virtual_coils = VIRTUAL_COILS_ZULU;
+			channel->has_virtual_coils = VIRTUAL_COILS_ZULU;
 			system("echo 149 >/sys/class/gpio/export; echo out >/sys/class/gpio/gpio149/direction; echo 1 >/sys/class/gpio/gpio149/value");
-                }
+		}
 	}
 
     server_socket = modbus_tcp_listen(nb_ctx->ctx, NB_CONNECTION);
@@ -557,10 +545,9 @@ int main(int argc, char *argv[])
                 lasttimesec = ntime;
             }
         }
-        if (deferred_op == DFR_OP_FIRMWARE) {
+        /*if (deferred_op == DFR_OP_FIRMWARE) {
             deferred_op = DFR_NONE;
-            /*arm_firmware(deferred_arm, firmwaredir);*/
-        }
+        }*/
 
         int n, i;
         fflush(stdout);

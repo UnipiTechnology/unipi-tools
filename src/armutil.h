@@ -5,6 +5,8 @@
  extern "C" {
 #endif
 
+#include "kchannel.h"
+
 #define vprintf( ... ) if (verbose > 0) printf( __VA_ARGS__ )
 #define vvprintf( ... ) if (verbose > 1) printf( __VA_ARGS__ )
 
@@ -13,6 +15,8 @@
 #define eprintf(f, args...)	fprintf(stderr, f, ##args)
 
 extern int verbose;
+extern int arm_verbose;
+extern int nss_pause;
 
 /* Hardware constants */
 #define PAGE_SIZE   1024
@@ -34,7 +38,7 @@ extern int verbose;
 #define SW_MAJOR(sw)  ((sw) >> 8)
 #define SW_MINOR(sw)  ((sw) & 0xff)
 
-typedef struct {
+/*typedef struct {
   uint16_t sw_version;
   uint16_t hw_version;
   uint16_t base_hw_version;
@@ -47,6 +51,7 @@ typedef struct {
   uint16_t uled_count;
   uint16_t int_mask_register;
 } Tboard_version;
+*/
 
 typedef struct {
   uint8_t board;
@@ -74,8 +79,6 @@ int upboard_exists(int board);
 int check_compatibility(int hw_base, int upboard);
 int get_board_speed(Tboard_version* bv);
 
-//uint32_t check_new_rw_version(Tboard_version* bv, const char* fwdir);
-//uint8_t* load_fw_file(Tboard_version* bv, const char* fwdir, int rw, int* datalen);
 
 Textension_map* get_extension_map(int board);
 

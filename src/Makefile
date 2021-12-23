@@ -65,6 +65,7 @@ endif
 #list of src files to include in build process
 SPISRC = armspi.c
 SPISRC += spicrc.c
+SPISRC += unipi_channel.c
 SPISRC += armutil.c
 SPISRC += unipiutil.c
 SRC = $(SPISRC) nb_modbus.c virtual_regs.c
@@ -111,7 +112,7 @@ unipi_tcp_server: unipi_tcp_server.o $(OBJS)
 #	$(CC) fwspi.o $(OBJS) $(LDFLAGS) -o $@
 #	@chmod +x $@
 
-fwspi: fw.spi.o armutil.o armspi.o spicrc.o fwimage.spi.o fwconfig.spi.o fwopt.spi.o fwdriver.spi.o fwbin.spi.o
+fwspi: fw.spi.o armutil.o armspi.o spicrc.o unipi_channel.o fwimage.spi.o fwconfig.spi.o fwopt.spi.o fwdriver.spi.o fwbin.spi.o
 	$(CC) $+ $(LDFLAGS) -o $@
 	@chmod +x $@
 
