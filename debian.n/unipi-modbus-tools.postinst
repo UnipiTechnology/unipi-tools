@@ -1,5 +1,5 @@
 #!/bin/sh
-# postinst script for neuron-modbus-tools
+# postinst script for unipi-modbus-tools
 #
 # see: dh_installdeb(1)
 

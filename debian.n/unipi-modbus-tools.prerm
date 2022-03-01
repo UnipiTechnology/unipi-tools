@@ -1,5 +1,5 @@
 #!/bin/sh
-# prerm script for neuron-modbus-tools
+# prerm script for unipi-modbus-tools
 #
 # see: dh_installdeb(1)
 
