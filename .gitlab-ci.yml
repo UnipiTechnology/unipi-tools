@@ -4,6 +4,6 @@ include:
 
 variables:
     #build_for_architecture: "armhf arm64"
-    #build_for_distribution: "all"
-    build_for_distribution: "stable"
+    build_for_distribution: "all"
+    #build_for_distribution: "stable"
     build_for_architecture: "armhf"
