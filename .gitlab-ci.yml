@@ -4,5 +4,5 @@ include:
 
 variables:
     build_for_architecture: "armhf arm64"
-    #build_for_distribution: "all"
-    build_for_distribution: "newstable"
+    build_for_distribution: "all"
+    #build_for_distribution: "newstable"
