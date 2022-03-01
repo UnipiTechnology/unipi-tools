@@ -14,15 +14,20 @@
 #export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
 
 
+PROJECT_VERSION=$(shell dpkg-parsechangelog -S Version)
+
 clean:
 	dh clean
-	[ -x debian/control-generator.sh ] && debian/control-generator.sh
 
 
 override_dh_strip:
 	dh_strip --no-automatic-dbgsym
 
--include debian/rules.in
+override_dh_auto_build:
+	dh_auto_build -- PROJECT_VERSION=$(PROJECT_VERSION)
+
+override_dh_gencontrol:
+	dh_gencontrol -- -Tdebian/substvars
 
 %:
 	dh $@ --with=systemd
