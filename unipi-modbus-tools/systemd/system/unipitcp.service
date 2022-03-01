@@ -20,5 +20,4 @@ WorkingDirectory=/opt/unipi/tools
 Restart=always
 
 [Install]
-WantedBy=unipispi.target
-WantedBy=unipigate.target
+WantedBy=multi-user.target
