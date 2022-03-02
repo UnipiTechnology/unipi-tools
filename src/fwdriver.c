@@ -62,7 +62,7 @@ int fwspi_run(void* channel)
 	return 0;
 }
 
-int fwspi_confirm(void* channel, int resetrw)
+int fwspi_confirm(void* channel)
 {
     arm_handle* arm = channel;
 	confirm_firmware(arm);
