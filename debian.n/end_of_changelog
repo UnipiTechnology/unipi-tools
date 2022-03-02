@@ -1,4 +1,4 @@
-unipi-modbus-tools (1.1.15) unstable; urgency=medium
+unipi-tools (1.1.15) unstable; urgency=medium
 
   * fix speed setting in fwspi
 

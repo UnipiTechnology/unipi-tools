@@ -1,0 +1,4 @@
+#! /usr/bin/dh-exec
+
+debian/tmp/opt/unipi/tools/fwspi	opt/unipi/tools/
+debian/tmp/opt/unipi/tools/fwserial	opt/unipi/tools/

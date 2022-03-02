@@ -110,23 +110,23 @@ unipi_tcp_server: unipi_tcp_server.o $(OBJS)
 #fwspi:  fwspi.o $(OBJS)
 #	$(CC) fwspi.o $(OBJS) $(LDFLAGS) -o $@
 #	@chmod +x $@
-	
+
 fwspi: fw.spi.o armutil.o armspi.o spicrc.o fwimage.spi.o fwconfig.spi.o fwopt.spi.o fwdriver.spi.o fwbin.spi.o
 	$(CC) $+ $(LDFLAGS) -o $@
 	@chmod +x $@
-	
+
 fwserial: fw.serial.o armutil.o fwimage.serial.o fwconfig.serial.o fwopt.serial.o fwdriver.serial.o fwbin.serial.o
 	$(CC) $+ $(LDFLAGS) -o $@
 	@chmod +x $@
 
 unipihostname:  unipihostname.o unipiutil.o
-	$(CC) unipihostname.o unipiutil.o -o $@
+	$(CC) unipihostname.o unipiutil.o $(PROJECT_VERSION) -o $@
 	@chmod +x $@
 
 unipicheck:  unipicheck.o unipiutil.o
 	$(CC) unipicheck.o unipiutil.o -o $@
 	@chmod +x $@
-	
+
 bandwidth-client: bandwidth-client.o
 	$(CC) bandwidth-client.o $(LDFLAGS) -o $@
 
@@ -135,7 +135,7 @@ bandwidth-client: bandwidth-client.o
 ifdef SYSTEMROOT
 win32_serial.o: win32_serial.c
 	$(CC) -Wno-deprecated-declarations -c $(LDFLAGS) -I . $(INCDIR)  $< -o $@
-	
+
 fwserial-win: win32_serial.o armutil.o
 	$(CC) $+ $(LDFLAGS2) $(LDFLAGS) -o neuron_fw_utility
 endif

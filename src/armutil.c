@@ -120,10 +120,10 @@ char* _firmware_name(Tboard_version* bv, const char* fwdir, const char* ext, int
     uint8_t board_revision = HW_MAJOR(bv->hw_version);
     uint8_t used_board_revision = use_base_revision ? HW_MAJOR(bv->base_hw_version) : board_revision;
     Tcompatibility_map* map = get_map(HW_BOARD(bv->hw_version));
-    if (map  == NULL) return NULL;
     
     if (SW_MAJOR(bv->sw_version) <= 5)
     {
+        if (map  == NULL) return NULL;
         if (map->baseboard == map->board) {
             const char* armname = map->name;
             char* fwname = malloc(strlen(fwdir) + strlen(armname) + strlen(ext) + 2 + 4);
@@ -155,7 +155,7 @@ char* _firmware_name(Tboard_version* bv, const char* fwdir, const char* ext, int
         char* fwname = malloc(strlen(fwdir) + strlen(ext) + 7);
         strcpy(fwname, fwdir);
         if (strlen(fwname) && (fwname[strlen(fwname)-1] != '/')) strcat(fwname, "/");
-        sprintf(fwname+strlen(fwname), "%02d-%d%s%s", map->board, used_board_revision, calibrate?"C":"", ".img");
+        sprintf(fwname+strlen(fwname), "%02d-%d%s%s", HW_BOARD(bv->hw_version), used_board_revision, calibrate?"C":"", ".img");
         return fwname;
     }
 }
