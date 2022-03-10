@@ -174,7 +174,7 @@ int parseopt(int argc, char **argv)
                eprintf("Unit must be non-zero integer and less than 255 (given %s)\n", optarg);
                return 1;
            }
-           sprintf(buf, "/dev/unipimodbus%d", unit);
+           sprintf(buf, "/dev/unipichannel%d", unit);
            com_options.PORT = strdup(buf);
            break;
 #endif
