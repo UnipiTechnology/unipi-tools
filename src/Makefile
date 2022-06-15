@@ -131,6 +131,9 @@ unipicheck:  unipicheck.o unipiutil.o
 bandwidth-client: bandwidth-client.o
 	$(CC) bandwidth-client.o $(LDFLAGS) -o $@
 
+testch: armutil.o unipi_channel.o testch.o
+	$(CC) $+ -o $@
+	@chmod +x $@
 
 # SYSTEMROOT should be defined on windows, so we use it to detect the OS
 ifdef SYSTEMROOT
@@ -147,7 +150,7 @@ install:
 
 clean:
 	-rm -f *.o
-	-rm -f $(BINFILES)
+	-rm -f $(BINFILES) testch
 #	-rm -rf $(SRC:.c=.lst)
 #	-rm -f ../bin/*
 
