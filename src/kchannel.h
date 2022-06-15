@@ -12,7 +12,6 @@
 #define __kchannel_h
 
 #include <stdint.h>
-#include <linux/spi/spidev.h>
 
 #define ARM_PAGE_SIZE      1024
 #define ARM_FIRMWARE_KEY   0xAA99FF33

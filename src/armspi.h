@@ -12,7 +12,6 @@
 #define __armspi_h
 
 #include <stdint.h>
-#include <linux/spi/spidev.h>
 #include "kchannel.h"
 #include "armutil.h"
 
