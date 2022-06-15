@@ -86,6 +86,12 @@ SPIOBJS  = $(SPISRC:.c=.o)
 LDFLAGS = $(LIBDIR) $(LIB)
 #CPFLAGS = -g -fomit-frame-pointer -Wall -Wstrict-prototypes -fverbose-asm 
 CPFLAGS = -Wall -Wstrict-prototypes
+MACHINE :=  $(shell gcc -dumpmachine)
+ifeq (1, $(patsubst %-gnu,1,$(MACHINE)))
+    LIBSYSTEMD = -lsystemd
+else
+    DEFSYSTEMD = -DUNUSE_SYSTEMD
+endif
 
 #
 # makefile rules
@@ -101,11 +107,14 @@ all: $(BINFILES)
 %.spi.o: %.c
 	$(CC) -c $(CPFLAGS) $(LDFLAGS) -I . $(INCDIR) $(PROJECT_VERSION) -DFWSPI $< -o $@
 
+unipi_tcp_server.o: unipi_tcp_server.c
+	$(CC) -c $(CPFLAGS) -I . $(INCDIR) $(PROJECT_VERSION) $(DEFSYSTEMD) $< -o $@
+
 
 .PHONY: fwspi unipi_tcp_server fwserial
 
-unipi_tcp_server: unipi_tcp_server.o $(OBJS) 
-	$(CC) unipi_tcp_server.o $(OBJS) $(LDFLAGS) -l systemd -o $@
+unipi_tcp_server: unipi_tcp_server.o $(OBJS)
+	$(CC) unipi_tcp_server.o $(OBJS) $(LDFLAGS) $(LIBSYSTEMD) -o $@
 	@chmod +x $@
 
 #fwspi:  fwspi.o $(OBJS)
