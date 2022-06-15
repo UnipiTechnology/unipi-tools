@@ -26,7 +26,7 @@
 #include "virtual_regs.h"
 #include "unipiutil.h"
 
-typedef struct __attribute__ ((__packed__)) {
+typedef struct __attribute__ ((__packed__)) __attribute__ ((aligned(8))) {
     uint16_t ao_sw;
     uint16_t ao_v_dev;
     uint16_t ao_v_offs;
