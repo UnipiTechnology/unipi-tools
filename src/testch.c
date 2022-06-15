@@ -28,20 +28,24 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <linux/types.h>
-//#include <linux/spi/spidev.h>
 #include <string.h>
+#include "armutil.h"
+#include "kchannel.h"
 
-int read_regs(int fd, uint16_t reg, uint8_t cnt, uint16_t* result);
-int write_regs(int fd,  uint16_t reg, uint8_t cnt, uint16_t* values);
-int write_bits(int fd, uint16_t reg, uint16_t cnt, uint8_t* values);
-int read_bits(int fd, uint16_t reg, uint16_t cnt, uint8_t* result);
+struct kchannel* channel_init(const char* device, int index, uint32_t speed);
 
-int read_print(int fd, int r, int cnt)
+
+//int read_regs(int fd, uint16_t reg, uint8_t cnt, uint16_t* result);
+//int write_regs(int fd,  uint16_t reg, uint8_t cnt, uint16_t* values);
+//int write_bits(int fd, uint16_t reg, uint16_t cnt, uint8_t* values);
+//int read_bits(int fd, uint16_t reg, uint16_t cnt, uint8_t* result);
+
+int read_print(struct kchannel* fd, int r, int cnt)
 {
 	int i, n;
 	u_int16_t regs[40];
 
-	n = read_regs(fd, r, cnt, regs);
+	n = fd->read_regs(fd, r, cnt, regs);
 	printf("n=%d\n", n);
 	if (n < 0) {
 		printf("Error read ret=%d\n", n);
@@ -53,12 +57,12 @@ int read_print(int fd, int r, int cnt)
 	return n;
 }
 
-int bit_print(int fd, int r, int cnt)
+int bit_print(struct kchannel* fd, int r, int cnt)
 {
 	int i, n;
 	u_int8_t regs[40];
 
-	n = read_bits(fd, r, cnt, regs);
+	n = fd->read_bits(fd, r, cnt, regs);
 	if (n <= 0) {
 		printf("Error read ret=%d\n", n);
 	} else {
@@ -72,16 +76,31 @@ int bit_print(int fd, int r, int cnt)
 int main(int argc, char** argv)
 {
 	int fd;
-	int ret;
-	uint16_t wr[8];
+	int ret, n;
+	uint16_t wr[48];
+	struct kchannel *channel;
 
-	fd = open("/dev/unipichannel11", O_RDWR);
+	channel = channel_init("/dev/unipichannel11", 11, 12000000);
+	if (channel == NULL) {
+		printf("Error open file\n");
+		return 1;
+	}
+
+	read_print(channel, 1000, 1);
+	read_print(channel, 1008, 1);
+
+	/*fd = open("/dev/unipichannel21", O_RDWR);
 	if (fd < 0) {
 		printf("Error open file ret=%d\n", fd);
 		return 1;
 	}
-
-	read_print(fd, 0, 10);
+	*/
+	for (ret=0; ret < 100000; ret++) {
+	    n = channel->read_regs(channel, 0, 4, wr);
+	    //n = channel->write_regs(channel, 1000, 1, wr);
+	    if (n != 4) printf("Error read ret=%d\n", n);
+	}
+	    //read_print(channel, 1000, 4);
 /*
 	read_print(fd, 1000, 27);
 */
@@ -99,11 +118,11 @@ int main(int argc, char** argv)
 	read_print(fd, 1018,8);
 */
 
-	bit_print(fd, 1006,32);
+//	bit_print(channel, 1000,2);
 /*
 	wr[0]=1;
 	ret = write_bits(fd, 1000, 3, (uint8_t*) wr);
 	printf("write bits ret=%d\n", ret);
 */
-	close(fd);
+	channel->close(channel);
 }
