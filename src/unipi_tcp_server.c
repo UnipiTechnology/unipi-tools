@@ -21,6 +21,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
@@ -38,7 +39,10 @@
 
 #include <fcntl.h>
 #include <sys/epoll.h>
+
+#ifndef UNUSE_SYSTEMD
 #include <systemd/sd-daemon.h>
+#endif
 
 #include "armspi.h"
 #include "unipiutil.h"
@@ -168,6 +172,7 @@ static void close_sigint(int dummy)
     close(server_socket);
     nb_modbus_free(nb_ctx);
 
+    exit(0);
     exit(dummy);
 }
 
@@ -365,9 +370,11 @@ int main(int argc, char *argv[])
 
     int poll_timeout = -1;
     int wdtimesec = -1;
+#ifndef UNUSE_SYSTEMD
     unsigned long lasttimesec = time(NULL);
+#endif
     char* wdenv = getenv("WATCHDOG_USEC");
-	struct kchannel *channel;
+    struct kchannel *channel;
 
      // Options
     int c;
@@ -492,6 +499,8 @@ int main(int argc, char *argv[])
     }
 
     signal(SIGINT, close_sigint);
+    signal(SIGHUP, close_sigint);
+    signal(SIGTERM, close_sigint);
     s = make_socket_non_blocking (server_socket);
     if (s == -1)  abort ();
 
@@ -538,6 +547,7 @@ int main(int argc, char *argv[])
     if (verbose) printf("Starting primary loop\n");
     /* The event loop */
     while (1) {
+#ifndef UNUSE_SYSTEMD
         if (wdtimesec > 0) {
             unsigned long ntime = time(NULL);
             if ((ntime - lasttimesec) >= wdtimesec) {
@@ -545,6 +555,7 @@ int main(int argc, char *argv[])
                 lasttimesec = ntime;
             }
         }
+#endif
         /*if (deferred_op == DFR_OP_FIRMWARE) {
             deferred_op = DFR_NONE;
         }*/
