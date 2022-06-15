@@ -85,7 +85,7 @@ int upgrade_bootloader(Tboard_version *bv, void* channel)
 		goto err;
 
 	if (SW_MAJOR(bv->sw_version) < 6) {
-		eprintf("Unsuccessful upgrade: %s.\n", modbus_strerror(errno));
+		eprintf("Unsuccessful upgrade: %s.\n", strerror(errno));
 		goto err;
 	}
 	ret = 0;
