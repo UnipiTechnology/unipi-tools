@@ -1,0 +1,4 @@
+#! /usr/bin/dh-exec
+
+src/*		opt/unipi/unipi-modbus-docker/src/
+docker/*	opt/unipi/unipi-modbus-docker/

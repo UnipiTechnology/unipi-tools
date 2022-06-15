@@ -23,3 +23,11 @@ Suggests: unipi-kernel-modules (>=1.42) | unipi-kernel-modules-dkms (>=1.42)
 Description: Firmware utilities for Unipi Neuron/Patron/Axon/Iris controllers.
  Utility for firmware update via SPI or serial Modbus. 
  Requires firmware files (packag eunipi-firmware.deb)
+
+Package: unipi-modbus-docker
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Docker image builder script with Modbus server for Unipi.
+ Source files for building Docker image based on Alpine Linux for
+ running Unipi Modbus server in minimalistic container
+
