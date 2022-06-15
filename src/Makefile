@@ -99,13 +99,13 @@ endif
 all: $(BINFILES)
 
 %.o: %.c
-	$(CC) -c $(CPFLAGS) $(LDFLAGS) -I . $(INCDIR) $(PROJECT_VERSION) $< -o $@
+	$(CC) -c $(CPFLAGS) -I . $(INCDIR) $(PROJECT_VERSION) $< -o $@
 
 %.serial.o: %.c
-	$(CC) -c $(CPFLAGS) $(LDFLAGS) -I . $(INCDIR) $(PROJECT_VERSION) -DFWSERIAL $< -o $@
+	$(CC) -c $(CPFLAGS) -I . $(INCDIR) $(PROJECT_VERSION) -DFWSERIAL $< -o $@
 
 %.spi.o: %.c
-	$(CC) -c $(CPFLAGS) $(LDFLAGS) -I . $(INCDIR) $(PROJECT_VERSION) -DFWSPI $< -o $@
+	$(CC) -c $(CPFLAGS) -I . $(INCDIR) $(PROJECT_VERSION) -DFWSPI $< -o $@
 
 unipi_tcp_server.o: unipi_tcp_server.c
 	$(CC) -c $(CPFLAGS) -I . $(INCDIR) $(PROJECT_VERSION) $(DEFSYSTEMD) $< -o $@
@@ -122,7 +122,7 @@ unipi_tcp_server: unipi_tcp_server.o $(OBJS)
 #	@chmod +x $@
 
 fwspi: fw.spi.o armutil.o armspi.o spicrc.o unipi_channel.o fwimage.spi.o fwconfig.spi.o fwopt.spi.o fwdriver.spi.o fwbin.spi.o
-	$(CC) $+ $(LDFLAGS) -o $@
+	$(CC) $+ -lm -o $@
 	@chmod +x $@
 
 fwserial: fw.serial.o armutil.o fwimage.serial.o fwconfig.serial.o fwopt.serial.o fwdriver.serial.o fwbin.serial.o
@@ -138,7 +138,7 @@ unipicheck:  unipicheck.o unipiutil.o
 	@chmod +x $@
 
 bandwidth-client: bandwidth-client.o
-	$(CC) bandwidth-client.o $(LDFLAGS) -o $@
+	$(CC) bandwidth-client.o -o $@
 
 testch: armutil.o unipi_channel.o testch.o
 	$(CC) $+ -o $@
