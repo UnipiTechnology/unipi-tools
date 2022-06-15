@@ -425,6 +425,8 @@ struct kchannel* add_channel(nb_modbus_t*  nb_ctx, uint8_t index, const char *de
 	arm_verbose = verbose;
 	sprintf(channelname, UNIPICHANNELNAME, index);
 
+	if (arm_verbose) printf("ADD CHANNEL: %s\n", channelname);
+
 	ret = access(channelname, R_OK | W_OK);
 	if (ret == 0) {
 		filename = channelname;
@@ -446,12 +448,13 @@ struct kchannel* add_channel(nb_modbus_t*  nb_ctx, uint8_t index, const char *de
 	c = nb_ctx->channel;
 	last = &nb_ctx->channel;
 	while (c != NULL) {
-		if (c->index <  index) break;
+		if (index < c->index) break;
 		last = &c->next;
 		c = c->next;
 	}
 	channel->next = c;
 	*last = channel;
+	if (arm_verbose) printf("ADD CHANNEL: OK\n");
 	return channel;
 }
 
@@ -476,11 +479,9 @@ struct kchannel* get_channel(nb_modbus_t*  nb_ctx, uint8_t index)
 {
 	struct kchannel *c;
 	c = nb_ctx->channel;
-	while (c != NULL) {
-		if (c->index == index) break;
-		if (c->index > index) return NULL;
-		c = c->next;
-	}
-	return c;
+	while (c != NULL && c->index < index) c = c->next;
+	if (c != NULL && c->index == index)
+	    return c;
+	return NULL;
 }
 
