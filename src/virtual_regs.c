@@ -44,7 +44,7 @@ typedef struct __attribute__ ((__packed__)) __attribute__ ((aligned(8))) {
 
 int loaded = 0;
 int use_calibration = 0;
-Tcalibration calibration;
+Tcalibration calibration  __attribute__((aligned (4)));
 float vmul0, vmul1, vmul2, amul0, amul1;
 float voffs0, voffs1, voffs2, aoffs0, aoffs1;
 

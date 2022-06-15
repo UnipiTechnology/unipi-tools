@@ -351,16 +351,16 @@ static uint32_t firmware_op(struct kchannel *channel, uint32_t address, uint8_t*
 
     ret = write(channel->fd, char_package, sizeof(arm_comm_firmware) + 10);
     if (ret != sizeof(arm_comm_firmware) + 10) {
-    	if (arm_verbose) printf("FW-OP invalid length written: %d, exp: %ld\n", ret, sizeof(arm_comm_firmware) + 10);
+    	if (arm_verbose) printf("FW-OP invalid length written: %d, exp: %zu\n", ret, sizeof(arm_comm_firmware) + 10);
         return 0xffffffff;
     }    
    	ret = read(channel->fd, char_package, sizeof(arm_comm_firmware) + 10);
     if (ret != sizeof(arm_comm_firmware) + 10) {
-    	if (arm_verbose) printf("FW-OP invalid length read: %d, exp: %ld\n", ret, sizeof(arm_comm_firmware) + 10);
+    	if (arm_verbose) printf("FW-OP invalid length read: %d, exp: %zu\n", ret, sizeof(arm_comm_firmware) + 10);
         return 0xffffffff;
     }
 
-    if (arm_verbose>1) printf("FW-OP recv len:%ld: repl:%02x%02x%02x%02x\t%02x %02x %02x %02x\n",
+    if (arm_verbose>1) printf("FW-OP recv len:%zu: repl:%02x%02x%02x%02x\t%02x %02x %02x %02x\n",
              sizeof(arm_comm_firmware), char_package[3], char_package[2], char_package[1], char_package[0],
                                         char_package[4], char_package[5], char_package[6], char_package[7]);
     // On Ai4Ao doesn't work crc

@@ -2,7 +2,6 @@
 Description=Unipi Neuron/Axon/Patron/Gate Modbus/Tcp Server
 Before=mervisrt.service
 Before=evok.service
-After=systemd-modules-load.service
 
 [Service]
 Type=simple
@@ -21,4 +20,5 @@ WorkingDirectory=/opt/unipi/tools
 Restart=always
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=unipispi.target
+WantedBy=unipigate.target

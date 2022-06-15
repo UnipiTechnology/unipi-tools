@@ -91,7 +91,7 @@ int fwspi_run(void* channel)
 	return 0;
 }
 
-int fwspi_confirm(void* channel) //, int resetrw)
+int fwspi_confirm(void* channel)
 {
 	struct kchannel *kchannel = channel;
     int prog_bit = 1004;
