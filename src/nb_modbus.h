@@ -17,7 +17,7 @@
 
 #include "kchannel.h"
 
-#define MAX_ARMS 7
+#define MAX_ARMS 5
 // from modbus_private_h
 #define _REPORT_MB_SLAVE_ID 181
 #define _MODBUS_TCP_PRESET_RSP_LENGTH  8

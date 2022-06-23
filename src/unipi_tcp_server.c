@@ -56,7 +56,7 @@
 
 const char* version_string = PROJECT_VER;
 
-char* spi_devices[MAX_ARMS] = {"/dev/unipispi","/dev/unipispi","/dev/unipispi"};
+char* SPI_DEVICE_NAME = "/dev/unipispi";
 int spi_speed[MAX_ARMS] = {0,0,0};
 char* gpio_int[MAX_ARMS] = { "27", "23", "22" };
 int broadcast_address = 0;
@@ -421,10 +421,7 @@ int main(int argc, char *argv[])
            }
            break;
        case 's':
-           if (parse_slist(optarg, spi_devices) == 0) {
-               printf("Bad spidevices count(1-3) (%s))\n", optarg);
-               exit(EXIT_FAILURE);
-           }
+           printf("Deprecated parameter -s \n");
            break;
        case 'b':
            if (parse_ilist(optarg, spi_speed) == 0) {
@@ -462,7 +459,7 @@ int main(int argc, char *argv[])
     int ai;
     for (ai=0; ai<MAX_ARMS; ai++) {
         //nb_ctx->arm[ai] = NULL;
-        char* dev=spi_devices[ai];
+        char* dev=SPI_DEVICE_NAME;
         if ((dev != NULL) && (strlen(dev)>0)) {
             int speed = spi_speed[ai];
             if (!(speed > 0)) speed = spi_speed[0];
