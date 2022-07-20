@@ -286,9 +286,9 @@ int read_pure_virtual_regs(uint16_t reg, uint8_t cnt, uint16_t* result)
 	}
 	// LTE address range [OFFSET_PV_LTE_GROUP : OFFSET_PV_SYSSTAT_GROUP)
 	else if (reg < OFFSET_PV_SYSSTAT_GROUP){
-		char* filelist_b[] = {"/var/run/unipi_lte/rssi",
-				"/var/run/unipi_lte/mode",
+		char* filelist_b[] = {"/var/run/unipi_lte/mode",
 				"/var/run/unipi_lte/nettype",
+				"/var/run/unipi_lte/rssi",
 				"/var/run/unipi_lte/sigqual"};
 		filelist = filelist_b;
         filelist_size = (sizeof(filelist_b) / sizeof(filelist_b[0]));
