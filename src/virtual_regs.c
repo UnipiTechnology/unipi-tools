@@ -273,7 +273,7 @@ int read_pure_virtual_regs(uint16_t reg, uint8_t cnt, uint16_t* result)
         char ** filelist = NULL;
         uint8_t filelist_size = 0;
 	// STORSTAT address range [OFFSET_PV_STORSTAT_GROUP : OFFSET_PV_LTE_GROUP)
-	if (reg < OFFSET_PV_LTE_GROUP){
+	if (reg < OFFSET_PV_SYSSTAT_GROUP){ // Adress 4000 - 4099
 		char* filelist_a[] = {"/var/run/unipi_stats/cycles_used",
 				"/var/run/unipi_stats/good_blocks",
 				"/var/run/unipi_stats/power_cycles",
@@ -284,8 +284,11 @@ int read_pure_virtual_regs(uint16_t reg, uint8_t cnt, uint16_t* result)
         filelist_size = (sizeof(filelist_a) / sizeof(filelist_a[0]));
         reg = reg - OFFSET_PV_STORSTAT_GROUP;
 	}
+    else if (reg < OFFSET_PV_LTE_GROUP){ //Address 4100 - 4199
+        return 0;
+    }
 	// LTE address range [OFFSET_PV_LTE_GROUP : OFFSET_PV_SYSSTAT_GROUP)
-	else if (reg < OFFSET_PV_SYSSTAT_GROUP){
+	else if (reg < (OFFSET_PV_LTE_GROUP + 99)){ //Address 4200 - 4299
 		char* filelist_b[] = {"/var/run/unipi_lte/mode",
 				"/var/run/unipi_lte/nettype",
 				"/var/run/unipi_lte/rssi",
