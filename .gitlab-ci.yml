@@ -3,7 +3,7 @@ include:
     file: debian-pkg-ng.yaml
 
 variables:
-    build_for_architecture: "armhf"
+    build_for_architecture: "arm64 armhf"
     build_for_distribution: "newstable"
     #build_independent_for: "newstable"
     mirror_to_github: "no"
