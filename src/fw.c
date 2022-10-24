@@ -210,7 +210,7 @@ int auto_update(void)
 				else{
 					image_version = get_image_version(bv);
 					}
-				if (bv->sw_version < image_version) {
+				if ((bv->sw_version < image_version) && (SW_MAJOR(image_version) == SW_MAJOR(bv->sw_version))) {
 					printf("Upgrading firmware %d.%d (old was %d.%d) in device id=%d...\n", SW_MAJOR(image_version), SW_MINOR(image_version),\
 							SW_MAJOR(bv->sw_version), SW_MINOR(bv->sw_version), device_index);
 					upload_firmware(bv, channel, 0, 0);
