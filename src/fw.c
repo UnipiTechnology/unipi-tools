@@ -175,27 +175,44 @@ int auto_update(void)
 	int verbose0;
     int device_index = com_options.DEVICE_ID;
 	int max_device_index = com_options.DEVICE_ID;
+    int is_unipichannel = 0;
+    char buff[32];
 
     if (device_index == -1) {
         device_index = 0;
         max_device_index = 2;
     }
 
-    for (;device_index <= max_device_index; device_index++) {
-		com_options.DEVICE_ID = device_index;
+	for (;device_index <= max_device_index; device_index++) {
 		verbose0 = verbose;
 		verbose = -1;
-		channel=driver.open(&com_options);
+
+		// Firmware < 6 does not use unipichannel
+		if(is_unipichannel == 0){
+			com_options.DEVICE_ID = device_index;
+			channel=driver.open(&com_options);
+		}
+
+		// Firmware >=6 uses unipichannel instead of DEVICE_ID
+		if (channel == NULL || is_unipichannel == 1){
+			sprintf(buff, "/dev/unipichannel%d", device_index + 1);
+			com_options.PORT = buff;
+			com_options.DEVICE_ID = -1;
+			channel = driver.open(&com_options);
+			if (channel != NULL) is_unipichannel=1;
+		}
 		verbose = verbose0;
 		if (channel != NULL) {
 			if ((bv = driver.identify(channel)) != NULL){
-				if (SW_MAJOR(bv->sw_version) < 6) 
+				if (SW_MAJOR(bv->sw_version) < 6){
 					image_version = get_bin_version(bv);
-				else 
+					}
+				else{
 					image_version = get_image_version(bv);
+					}
 				if (bv->sw_version < image_version) {
-					printf("New firmware %d.%d for device id=%d fw=%d.%d\n", SW_MAJOR(image_version), SW_MINOR(image_version),\
-							device_index, SW_MAJOR(bv->sw_version), SW_MINOR(bv->sw_version));
+					printf("Upgrading firmware %d.%d (old was %d.%d) in device id=%d...\n", SW_MAJOR(image_version), SW_MINOR(image_version),\
+							SW_MAJOR(bv->sw_version), SW_MINOR(bv->sw_version), device_index);
 					upload_firmware(bv, channel, 0, 0);
 				}
 			}
