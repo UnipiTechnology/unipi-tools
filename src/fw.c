@@ -175,7 +175,8 @@ int auto_update(void)
 	int verbose0;
     int device_index = com_options.DEVICE_ID;
 	int max_device_index = com_options.DEVICE_ID;
-    int is_unipichannel = 0;
+    typedef enum {KERNEL_MODULE_UNKNOWN, KERNEL_MODULE_GEN1, KERNEL_MODULE_GEN2} driver_type_t;
+    driver_type_t current_driver = KERNEL_MODULE_UNKNOWN;
     char buff[32];
 
     if (device_index == -1) {
@@ -187,19 +188,21 @@ int auto_update(void)
 		verbose0 = verbose;
 		verbose = -1;
 
-		// Firmware < 6 does not use unipichannel
-		if(is_unipichannel == 0){
+		// Firmware < 6 does not use unipichannel (GEN1 kernel module)
+		if(current_driver == KERNEL_MODULE_GEN1 || current_driver == KERNEL_MODULE_UNKNOWN){
 			com_options.DEVICE_ID = device_index;
 			channel=driver.open(&com_options);
+			if (channel != NULL) current_driver = KERNEL_MODULE_GEN1;
+
 		}
 
-		// Firmware >=6 uses unipichannel instead of DEVICE_ID
-		if (channel == NULL || is_unipichannel == 1){
+		// Firmware >=6 uses unipichannel instead of DEVICE_ID (GEN2 kernel module)
+		if(current_driver == KERNEL_MODULE_GEN2 || current_driver == KERNEL_MODULE_UNKNOWN){
 			sprintf(buff, "/dev/unipichannel%d", device_index + 1);
 			com_options.PORT = buff;
 			com_options.DEVICE_ID = -1;
 			channel = driver.open(&com_options);
-			if (channel != NULL) is_unipichannel=1;
+			if (channel != NULL) current_driver = KERNEL_MODULE_GEN2;
 		}
 		verbose = verbose0;
 		if (channel != NULL) {
