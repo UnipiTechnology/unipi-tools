@@ -31,3 +31,9 @@ override_dh_gencontrol:
 
 %:
 	dh $@ --with=systemd
+
+override_dh_systemd_enable:
+	 dh_systemd_enable --no-enable --name=unipifwupdate
+
+override_dh_systemd_start:
+	 dh_systemd_start --no-start unipifwupdate.service
