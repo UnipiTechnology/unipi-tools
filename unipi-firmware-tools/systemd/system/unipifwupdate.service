@@ -1,0 +1,11 @@
+[Unit]
+Description=Unipi PLC Firmware Update Service
+Before=unipitcp.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c '/opt/unipi/tools/fwspi --auto'
+ExecStartPost=/bin/systemctl disable unipifwupdate
+
+[Install]
+WantedBy=multi-user.target
