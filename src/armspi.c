@@ -430,7 +430,7 @@ struct kchannel* arm_init(const char* device, int index, uint32_t speed)
     channel->fd = open(device, O_RDWR);
 
     if (channel->fd < 0) {
-        if (arm_verbose) printf("ARMINIT: Cannot open device %s\n", device);
+        if (arm_verbose >= 0) printf("ARMINIT: Cannot open device %s\n", device);
 		free(arm);
         return NULL;
     }
