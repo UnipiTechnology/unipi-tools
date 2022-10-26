@@ -4,8 +4,11 @@ Before=unipitcp.service
 
 [Service]
 Type=oneshot
+ExecStartPre=-/usr/bin/remount rw
 ExecStart=/bin/sh -c '/opt/unipi/tools/fwspi --auto'
 ExecStartPost=/bin/systemctl disable unipifwupdate
+ExecStartPost=-/usr/bin/remount
+
 
 [Install]
 WantedBy=unipispi.target
