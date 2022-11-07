@@ -75,7 +75,7 @@ int fwspi_start(void* channel)
 		bv = kchannel->get_version(kchannel);
 		if (bv->sw_version <= 0x400) prog_bit = 104;
 		kchannel->write_bit(kchannel, prog_bit, 1, (kchannel->index));
-		usleep(100000);
+		usleep(10000);
 	}
 	return 0;
 }
@@ -113,14 +113,30 @@ int fwspi_reboot(void* channel)
 int  fwspi_flash(void* channel, struct page_description *pd_array, int count, int action)
 {
 	struct kchannel* kchannel = channel;
-    int i, err, loop, prev_i, rx_result;
+	int i, err, loop, prev_i, rx_result;
 
 	loop = 0;
 	err = 1;
-	prev_i = -1;
+	while (err) {
+		rx_result = kchannel->firmware_op(kchannel, pd_array[0].flash_addr, pd_array[0].data, PAGE_SIZE);
+		if (rx_result == 0x0e5500fa) {
+			kchannel->write_bit(kchannel, 1004, 1, (kchannel->index));
+			vprintf_1("\r%04x ERR START\n", pd_array[0].flash_addr);
+			fflush(stdout);
+			usleep(1000);
+			if (loop++ >=5) return -1;
+		} else {
+			usleep(100000);
+			err = 0;
+		}
+	}
+
+	loop = 0;
+	err = 1;
+	prev_i = 0;
 	while ((loop++ < 5) && err) {
 		err = 0;
-		for (i=0; i<count; i++) {
+		for (i=1; i<count; i++) {
 			if (pd_array[i].errors >= 0) {
 				rx_result = kchannel->firmware_op(kchannel, pd_array[i].flash_addr, pd_array[i].data, PAGE_SIZE);
 				if (prev_i >= 0) {
