@@ -188,6 +188,9 @@ int check_compatibility(int hw_base, int upboard)
             }
         }
     }
+    if (upboard == 0)
+        return hw_base;
+
     return 0;
 }
 
@@ -210,6 +213,7 @@ void print_upboards(int filter)
 
 int upboard_exists(int board) 
 {
+    if (board == 0) return 1;
     return get_umap(board) != NULL;
 }
 
