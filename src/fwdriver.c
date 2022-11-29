@@ -156,11 +156,7 @@ int  fwspi_flash(void* channel, struct page_description *pd_array, int count, in
 		}
 	}
 
-	err = do_one_page(kchannel, pd_array[0].flash_addr, pd_array[0].data, 5);
-	if (err) {
-		return -1;
-	}
-	for (i=1; i<count; i++) {
+	for (i=0; i<count; i++) {
 		err = do_one_page(kchannel, pd_array[i].flash_addr, pd_array[i].data, 5);
 		if (err) {
 			return -1;
@@ -168,65 +164,6 @@ int  fwspi_flash(void* channel, struct page_description *pd_array, int count, in
 	}
 	vprintf_1("\n");
 	return 0;
-
-/*	
-	loop = 0;
-	err = 1;
-	while (err) {
-		rx_result1 = kchannel->firmware_op(kchannel, pd_array[0].flash_addr, pd_array[0].data, PAGE_SIZE);
-		usleep(100000);
-		rx_result = kchannel->firmware_op(kchannel, 0xF201, NULL, 0);
-		if ((rx_result == ARM_FIRMWARE_KEY) && (rx_result1 == 3)) {
-			break;
-		}
-		if (loop++ > 5) {
-			vprintf("\rERR FIRST PAGE\n");
-			return -1;
-		}
-	}
-*/
-
-	loop = 0;
-	err = 1;
-	prev_i = 0;
-	pd_array[prev_i].errors = -1;
-	vprintf_1("\r%04x OK ", pd_array[prev_i].flash_addr);
-
-	while ((loop++ < 5) && err) {
-		err = 0;
-		for (i=1; i<count; i++) {
-			if (pd_array[i].errors >= 0) {
-				rx_result = kchannel->firmware_op(kchannel, pd_array[i].flash_addr, pd_array[i].data, PAGE_SIZE);
-				if (prev_i > 0) {
-					if (rx_result == ARM_FIRMWARE_KEY) {
-						pd_array[prev_i].errors = -1;
-						vprintf_1("\r%04x OK ", pd_array[prev_i].flash_addr);
-					} else {
-						err = 1;
-						vprintf_1("\r%04x ERR\n", pd_array[prev_i].flash_addr);
-					}
-				}
-				prev_i = i;
-				fflush(stdout);
-				usleep(100000);
-			}
-		}
-		if (!err && (prev_i >= 0)) {
-			// send fake page to know result of last page;
-			rx_result = kchannel->firmware_op(kchannel, 0xF201, NULL, 0);
-			if (rx_result == ARM_FIRMWARE_KEY) {
-				pd_array[prev_i].errors = -1;
-				vprintf_1("\r%04x OK ", pd_array[prev_i].flash_addr);
-			} else {
-				err = 1;
-				vprintf_1("\r%04x ERR\n", pd_array[prev_i].flash_addr);
-				prev_i = -1;
-			}
-		}
-		fflush(stdout);
-	}
-	vprintf_1("\n");
-	return err;
 }
 
 struct driver driver = {
