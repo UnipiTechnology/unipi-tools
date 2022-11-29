@@ -110,65 +110,60 @@ int fwspi_reboot(void* channel)
 	return 0;
 }
 
+
+static int do_one_page(struct kchannel* kchannel, uint32_t flash_addr, uint8_t* data, int loop)
+{
+	int rx_result, rx_result1, err;
+
+	vprintf_1("\r%04x ", flash_addr);
+	err = 0;
+	while (loop-- > 0) {
+		fflush(stdout);
+		rx_result1 = kchannel->firmware_op(kchannel, flash_addr, data, PAGE_SIZE);
+		usleep(100000);
+		rx_result = kchannel->firmware_op(kchannel, 0xF201, NULL, 0);
+		if ((rx_result == ARM_FIRMWARE_KEY) && (rx_result1 == 3)) {
+			vprintf_1("OK%s", err ? "\n" : "");
+			fflush(stdout);
+			return 0;
+		}
+		vprintf_1("E ");
+	}
+	vprintf("Cannot write page %d\n", flash_addr);
+	return -1;
+}
+
+
 int  fwspi_flash(void* channel, struct page_description *pd_array, int count, int action)
 {
 	struct kchannel* kchannel = channel;
-	int i, err, loop, prev_i, rx_result;
+	int i, err, loop, rx_result;
 
 	loop = 0;
 	err = 1;
+
 	while (err) {
-		rx_result = kchannel->firmware_op(kchannel, pd_array[0].flash_addr, pd_array[0].data, PAGE_SIZE);
+		rx_result = kchannel->firmware_op(kchannel, 0xF201, NULL, 0);
+		if (rx_result == ARM_FIRMWARE_KEY) {
+			break;
+		}
 		if (rx_result == 0x0e5500fa) {
 			kchannel->write_bit(kchannel, 1004, 1, (kchannel->index));
-			vprintf_1("\r%04x ERR START\n", pd_array[0].flash_addr);
-			fflush(stdout);
-			usleep(1000);
-			if (loop++ >=5) return -1;
-		} else {
-			usleep(100000);
-			err = 0;
+		}
+		if (loop++ > 5) {
+			vprintf("ERR START\n");
+			return -1;
 		}
 	}
 
-	loop = 0;
-	err = 1;
-	prev_i = 0;
-	while ((loop++ < 5) && err) {
-		err = 0;
-		for (i=1; i<count; i++) {
-			if (pd_array[i].errors >= 0) {
-				rx_result = kchannel->firmware_op(kchannel, pd_array[i].flash_addr, pd_array[i].data, PAGE_SIZE);
-				if (prev_i >= 0) {
-					if (rx_result == ARM_FIRMWARE_KEY) {
-						pd_array[prev_i].errors = -1;
-						vprintf_1("\r%04x OK ", pd_array[prev_i].flash_addr);
-					} else {
-						err = 1;
-						vprintf_1("\r%04x ERR\n", pd_array[prev_i].flash_addr);
-					}
-				}
-				prev_i = i;
-				fflush(stdout);
-				usleep(100000);
-			}
+	for (i=0; i<count; i++) {
+		err = do_one_page(kchannel, pd_array[i].flash_addr, pd_array[i].data, 5);
+		if (err) {
+			return -1;
 		}
-		if (!err && (prev_i >= 0)) {
-			// send fake page to know result of last page;
-			rx_result = kchannel->firmware_op(kchannel, 0xF201, NULL, 0);
-			if (rx_result == ARM_FIRMWARE_KEY) {
-				pd_array[prev_i].errors = -1;
-				vprintf_1("\r%04x OK ", pd_array[prev_i].flash_addr);
-			} else {
-				err = 1;
-				vprintf_1("\r%04x ERR\n", pd_array[prev_i].flash_addr);
-				prev_i = -1;
-			}
-		}
-		fflush(stdout);
 	}
 	vprintf_1("\n");
-	return err;
+	return 0;
 }
 
 struct driver driver = {
