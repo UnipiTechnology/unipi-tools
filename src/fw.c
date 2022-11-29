@@ -34,6 +34,28 @@ const char* program_name = "fwspi";
 
 #define MAX_PAGES 64
 
+void show_board_info(Tboard_version *bv)
+{
+    printf("Boardset:   %3d %-30s (v%d.%d%s)\n",
+               HW_BOARD(bv->hw_version),  arm_name(bv->hw_version),
+               HW_MAJOR(bv->hw_version), HW_MINOR(bv->hw_version),
+               IS_CALIB(bv->hw_version)?" CAL":"");
+    printf("Baseboard:  %3d %-30s (v%d.%d)\n",
+               HW_BOARD(bv->base_hw_version),  arm_name(bv->base_hw_version),
+               HW_MAJOR(bv->base_hw_version), HW_MINOR(bv->base_hw_version));
+}
+
+void show_firmware_info(Tboard_version *bv)
+{
+    if (SW_MINOR(bv->sw_version)!=0) {
+        printf("Firmware: v%d.%d%s (for %d-%d)\n", SW_MAJOR(bv->sw_version), SW_MINOR(bv->sw_version),
+                IS_CALIB(bv->hw_version)?" CAL":"", HW_BOARD(bv->hw_version), HW_MAJOR(bv->hw_version));
+    } else {
+        printf("WARNING! Bootloader only (v%d.0). UPDATE FIRMWARE!\n", SW_MAJOR(bv->sw_version));
+    }
+}
+
+
 int upgrade_bootloader(Tboard_version *bv, void* channel)
 {
 	T_image_header header;
@@ -145,6 +167,12 @@ int upload_firmware(Tboard_version *bv, void* channel, int do_verify, int do_res
 	// try to run new firmware
 	driver.run(channel);
 	usleep(200000);
+	bv->sw_version=0;
+	if ((bv = driver.identify(channel)) == NULL) {
+		vprintf_1("Cannot read identification regs\n");
+	} else {
+		show_firmware_info(bv);
+	}
 	// confirm firmware
 	if ((driver.confirm(channel)!=0) && do_resetrw) {
 	    vprintf_1("Setting default parameters\n");
@@ -153,11 +181,18 @@ int upload_firmware(Tboard_version *bv, void* channel, int do_verify, int do_res
 	    driver.reopen(channel, &com_options);
 	    driver.confirm(channel);
         }
+	driver.confirm(channel);
 	// reboot
 	driver.reboot(channel);
 	usleep(200000);
-	if ((bv = driver.identify(channel)) == NULL)
-		goto err;
+	bv->sw_version=0;
+	if ((bv = driver.identify(channel)) == NULL) {
+		if ((bv = driver.identify(channel)) == NULL) {
+			ret = -1;
+			goto err;
+		}
+	}
+	show_firmware_info(bv);
 	ret = 0;
 err:
 	free(prog_data);
@@ -250,18 +285,9 @@ int main(int argc, char **argv)
     // get FW & HW version
     if ((bv = driver.identify(channel)) == NULL) goto err;
 
-    printf("Boardset:   %3d %-30s (v%d.%d%s)\n",
-               HW_BOARD(bv->hw_version),  arm_name(bv->hw_version),
-               HW_MAJOR(bv->hw_version), HW_MINOR(bv->hw_version),
-               IS_CALIB(bv->hw_version)?" CAL":"");
-    printf("Baseboard:  %3d %-30s (v%d.%d)\n",
-               HW_BOARD(bv->base_hw_version),  arm_name(bv->base_hw_version),
-               HW_MAJOR(bv->base_hw_version), HW_MINOR(bv->base_hw_version));
-    if (SW_MINOR(bv->sw_version)!=0) {
-        printf("Firmware: v%d.%d\n", SW_MAJOR(bv->sw_version), SW_MINOR(bv->sw_version));
-    } else {
-        printf("WARNING! Bootloader only (v%d.0). UPDATE FIRMWARE!\n", SW_MAJOR(bv->sw_version));
-    }
+    show_board_info(bv);
+    show_firmware_info(bv);
+
     header=load_image_header(bv);
     if (header && (SW_MAJOR(bv->sw_version) < 6)) {
         if (!do_upgrade)
