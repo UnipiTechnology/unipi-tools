@@ -137,7 +137,7 @@ static int do_one_page(struct kchannel* kchannel, uint32_t flash_addr, uint8_t* 
 int  fwspi_flash(void* channel, struct page_description *pd_array, int count, int action)
 {
 	struct kchannel* kchannel = channel;
-	int i, err, loop, prev_i, rx_result;
+	int i, err, loop, rx_result;
 
 	loop = 0;
 	err = 1;
