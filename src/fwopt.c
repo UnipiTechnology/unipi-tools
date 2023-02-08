@@ -75,8 +75,8 @@ void print_usage(char *argv0)
     printf("%s [-v] -a [-s <spidevice> | -i <index> | -u <unit> ] [-b <baudrate>] [-d <firmware dir>]\n", argv0);
     printf("%s [-vPRC] [-s <spidevice> | -i <index> | -u <unit> ] [-b <baudrate>] [-d <firmware dir>] [-F <upper board id>]\n", argv0);
     printf("\n");
-    printf("--index <index>\t\t [0...n] device index (for kernel mod < 2.0)\n");
-    printf("--unit  <unit>\t\t [1...254] device modbus adress (for kernel mod >= 2.0)\n");
+    printf("--index <index>\t\t [0...n] device index (for unipi-kernel-modules < 2.0)\n");
+    printf("--unit  <unit>\t\t [1...254] device Modbus Unit ID (for unipi-kernel-modules >= 2.0)\n");
     printf("--spidev <spidev>\t\t /dev/unipispi \n");
     printf("--baud <baudrate>\t default 10000000\n");
 #endif
