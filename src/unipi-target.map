@@ -7,3 +7,4 @@
 ^[SML][1-5]75	= unipiiqrf.target
 ^S115  = unipi-ttys0-rs485.target
 ^S117  = unipi-ttymxc2-rs485.target
+^S227  = unipiS227.target
