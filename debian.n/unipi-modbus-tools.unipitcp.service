@@ -1,5 +1,5 @@
 [Unit]
-Description=Unipi Neuron/Axon/Patron/Gate Modbus/Tcp Server kre
+Description=Unipi Neuron/Axon/Patron/Gate Modbus/Tcp Server
 Before=mervisrt.service
 Before=evok.service
 After=systemd-modules-load.service
