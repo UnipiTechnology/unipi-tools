@@ -5,5 +5,5 @@ include:
 variables:
     build_for_architecture: "armhf arm64 amd64"
     build_for_distribution: "all"
-    build_independent_for: "newstable"
+    build_independent_for: "stable"
     mirror_to_github: "yes"
