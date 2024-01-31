@@ -12,6 +12,7 @@ src/unipi_tcp_server
 src/unipihostname
 src/unipicheck
 src/bandwidth-client
+src/r2k
 .travis.yml
 .dir-locals.el
 .deps

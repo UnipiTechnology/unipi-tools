@@ -39,8 +39,6 @@ INCDIRS       = $(MODBUSDIR)/include
 
 LIBDIRS += $(MODBUS_LIBDIR)
 
-DSTDIR = .
-
 
 # List all user libraries here
 LIBS = modbus m
@@ -70,8 +68,8 @@ SPISRC += armutil.c
 SPISRC += unipiutil.c
 SRC = $(SPISRC) nb_modbus.c virtual_regs.c
 
-BINFILES = unipi_tcp_server fwspi fwserial unipihostname unipicheck
- 
+BINFILES = unipi_tcp_server fwspi fwserial unipihostname unipicheck r2k
+
 # Define optimisation level here
 #OPT = -Ofast
 #OPT = -Os
@@ -89,6 +87,10 @@ CPFLAGS = -Wall -Wstrict-prototypes
 MACHINE :=  $(shell gcc -dumpmachine)
 ifeq (1, $(patsubst %-gnu,1,$(MACHINE)))
     LIBSYSTEMD = -lsystemd
+
+    INCDIR  += $(shell pkg-config --cflags mhash)
+    LIBMHASH = $(shell pkg-config --libs-only-l mhash)
+    LIBDIRMHASH = $(shell pkg-config --libs-only-l mhash)
 else
     DEFSYSTEMD = -DUNUSE_SYSTEMD
 endif
@@ -142,6 +144,10 @@ bandwidth-client: bandwidth-client.o
 
 testch: armutil.o unipi_channel.o testch.o
 	$(CC) $+ -o $@
+	@chmod +x $@
+
+r2k: r2k.o
+	$(CC) $+ $(LDFLAGS) $(LIBMHASH) $(LIBDIRMHASH) -o $@
 	@chmod +x $@
 
 # SYSTEMROOT should be defined on windows, so we use it to detect the OS

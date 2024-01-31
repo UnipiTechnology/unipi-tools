@@ -1,4 +1,4 @@
-BINFILES = unipi_tcp_server fwspi fwserial unipihostname unipicheck
+BINFILES = unipi_tcp_server fwspi fwserial unipihostname unipicheck r2k
 HOST = $(shell ${CC} -dumpmachine | sed 's/-.*//')
 INSTALL = install
 
