@@ -85,7 +85,8 @@ LDFLAGS = $(LIBDIR) $(LIB)
 #CPFLAGS = -g -fomit-frame-pointer -Wall -Wstrict-prototypes -fverbose-asm 
 CPFLAGS = -Wall -Wstrict-prototypes
 MACHINE :=  $(shell gcc -dumpmachine)
-ifeq (1, $(patsubst %-gnu,1,$(MACHINE)))
+#ifeq (1, $(patsubst %-gnu,1,$(MACHINE)))
+ifndef SYSTEMROOT
     LIBSYSTEMD = -lsystemd
 
     INCDIR  += $(shell pkg-config --cflags mhash)
