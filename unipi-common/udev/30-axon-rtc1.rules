@@ -1,3 +1,0 @@
-
-# select "system RTC" or just use rtc1
-SUBSYSTEM=="rtc", KERNEL=="rtc1", SYMLINK+="rtc"

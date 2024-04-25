@@ -1,5 +1,0 @@
-#! /usr/bin/dh-exec
-
-unipi-firmware-tools/systemd/system.pre/* lib/systemd/system
-debian/tmp/opt/unipi/tools/fwspi	opt/unipi/tools/
-debian/tmp/opt/unipi/tools/fwserial	opt/unipi/tools/
