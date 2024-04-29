@@ -147,10 +147,10 @@ AM_CONDITIONAL(BUILD_TESTS, [test $enable_tests != no])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([
         Makefile
-        unipichannel/Makefile
-        unipichannel/unipichannel-version.h
-        tools/Makefile
-        fwtools/Makefile
+        lib/Makefile
+        lib/unipichannel-version.h
+        src/modbus-tools/Makefile
+        src/firmware-tools/Makefile
         libunipichannel.pc
 ])
 

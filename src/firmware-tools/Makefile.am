@@ -4,13 +4,13 @@ AM_CPPFLAGS = \
     -include $(top_builddir)/config.h \
     -DSYSCONFDIR=\""$(sysconfdir)"\" \
     -DLIBEXECDIR=\""$(libexecdir)"\" \
-    -I${top_srcdir}/tools \
-    -I${top_builddir}/unipichannel
+    -I${top_srcdir}/src/firmware-tools \
+    -I${top_builddir}/lib
 
 AM_CFLAGS = ${my_CFLAGS}
 
 common_ldflags = \
-	$(top_builddir)/unipichannel/libunipichannel.la
+	$(top_builddir)/lib/libunipichannel.la
 
 bin_PROGRAMS = fwserial fwspi
 

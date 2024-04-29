@@ -9,7 +9,7 @@ CLEANFILES += libunipichannel.pc
 
 dist_doc_DATA = AUTHORS README.md
 
-SUBDIRS = unipichannel tools fwtools
+SUBDIRS = lib src/modbus-tools src/firmare-tools
 
 #if BUILD_TESTS
 #SUBDIRS += tests
