@@ -4,14 +4,14 @@ AM_CPPFLAGS = \
     -include $(top_builddir)/config.h \
     -DSYSCONFDIR=\""$(sysconfdir)"\" \
     -DLIBEXECDIR=\""$(libexecdir)"\" \
-    -I${top_srcdir}/tools \
-    -I${top_builddir}/unipichannel
+    -I${top_srcdir}/src/modbus-tools \
+    -I${top_builddir}/lib
 
 AM_CFLAGS = ${my_CFLAGS}
 
 bin_PROGRAMS = unipi_tcp_server r2k
 common_ldflags = \
-	$(top_builddir)/unipichannel/libunipichannel.la
+	$(top_builddir)/lib/libunipichannel.la
 
 unipi_tcp_server_SOURCES = \
     unipi_tcp_server.c \
