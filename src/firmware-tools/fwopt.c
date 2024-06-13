@@ -11,7 +11,7 @@
 
 #include "armspi.h"
 #include "armutil.h"
-#include "nb_modbus.h"
+//#include "nb_modbus.h"
 //#include "unipiutil.h"
 #include "fwconfig.h"
 

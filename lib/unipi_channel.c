@@ -36,13 +36,6 @@ enum UNIPI_MODBUS_OP
 	UNIPI_MODBUS_OP_WRITEBIT  = 0x05,
 	UNIPI_MODBUS_OP_WRITEREG  = 0x06,
 	UNIPI_MODBUS_OP_WRITEBITS = 0x0F,
-/* 
-  unusable from user space
-	UNIPI_MODBUS_OP_WRITECHAR = 0x41,
-	UNIPI_MODBUS_OP_WRITESTR  = 0x64,
-	UNIPI_MODBUS_OP_READSTR   = 0x65,
-	UNIPI_MODBUS_OP_IDLE      = 0xFA
-*/
 };
 
 #define UNIPI_MODBUS_HEADER_SIZE 4
@@ -112,8 +105,8 @@ static int read_bits(struct kchannel* channel, uint16_t reg, uint8_t cnt, uint8_
 	read_ret = read(channel->fd, result, roundup_block(cnt,8));
 	if (read_ret < 0) return read_ret;
 
-    if (cnt & 0x7) {
-        // fix zeroing unused bits in last byte
+	if (cnt & 0x7) {
+		// fix zeroing unused bits in last byte
 		lastbyte = cnt >> 3;
 		mask = 0xff >> (8-(cnt & 7));
 		result[lastbyte] &= mask;
@@ -144,12 +137,12 @@ static int write_bit(struct kchannel* channel, uint16_t reg, uint8_t value, uint
 		ret = write(channel->fd, buffer, UNIPI_MODBUS_HEADER_SIZE);
 		return ret;
 	}
-	return write_bits(channel, reg, 1,&value);
+	return write_bits(channel, reg, 1, &value);
 }
 
 static Tboard_version * get_version(struct kchannel* channel)
 {
-    uint16_t configregs[5];
+	uint16_t configregs[5];
 	if (channel->_bv.sw_version == 0) {
 		if (read_regs(channel, 1000, 5, configregs) == 5) {
 			parse_version(&channel->_bv, configregs);
@@ -160,62 +153,50 @@ static Tboard_version * get_version(struct kchannel* channel)
 
 static uint32_t firmware_op(struct kchannel *channel, uint32_t address, uint8_t* tx_data, int tx_len)
 {
-    //uint16_t crc;
-    int ret;
-    uint32_t rx_result;
-    uint8_t char_package[ARM_PAGE_SIZE+sizeof(address)];
+	int ret;
+	uint32_t rx_result;
+	uint8_t char_package[ARM_PAGE_SIZE+sizeof(address)];
+	// firmware page address
+	memcpy(char_package, &address, sizeof(address));
+	if (tx_len > 0) {
+		// firmware data
+		memcpy(char_package+sizeof(address), tx_data, tx_len);
+	}
+	// fill aligned firmware data with void char
+	memset(char_package+ sizeof(address)+tx_len, 0xff, ARM_PAGE_SIZE-tx_len);
+	if (arm_verbose>1)
+		printf("FW-OP send len:%ld: addr:%02x%02x%02x%02x\t%02x %02x %02x %02x %02x %02x\n", 
+		        sizeof(char_package), char_package[3], char_package[2], char_package[1], char_package[0],
+		        char_package[4], char_package[5], char_package[6], char_package[7],
+		        char_package[8], char_package[9]);
 
-    memcpy(char_package, &address, sizeof(address));				// firmware page address
-    if (tx_len > 0) {
-        memcpy(char_package+ sizeof(address), tx_data, 
-                                      tx_len);						// firmware data
-    }
-    memset(char_package+ sizeof(address)+tx_len, 0xff, 
-                                      ARM_PAGE_SIZE-tx_len);		// empty firmware data
-    /*crc = SpiCrcString((uint8_t*)(char_package),
-                                      ARM_PAGE_SIZE+sizeof(address), 0);// calculate crc from address + data
-    memcpy(char_package+ sizeof(address)+ARM_PAGE_SIZE, &crc, 
-                                      sizeof(crc));						// set crc
-    char_package[0] = (uint8_t)channel->index;
-    char_package[3] = 0;
-    if (channel->speed) {
-        char_package[4] = channel->speed >> 8;
-        char_package[5] = channel->speed & 0xff;
-    }
-    char_package[7] = ((uint8_t)channel->index);
-	*/
-    if (arm_verbose>1) printf("FW-OP send len:%ld: addr:%02x%02x%02x%02x\t%02x %02x %02x %02x %02x %02x\n", 
-                 sizeof(char_package), char_package[3], char_package[2], char_package[1], char_package[0],
-                 char_package[4], char_package[5], char_package[6], char_package[7],
-                 char_package[8], char_package[9]);
+	ret = write(channel->fd, char_package, sizeof(char_package));
+	if (ret != 0) {
+		if (arm_verbose) printf("FW-OP invalid length written: %d, exp: %ld\n", ret, sizeof(char_package));
+		return 0xffffffff;
+	}
+	ret = read(channel->fd, &rx_result, sizeof(address));
+	if (ret != sizeof(address)) {
+		if (arm_verbose) printf("FW-OP invalid length read: %d, exp: %ld\n", ret, sizeof(address));
+		return 0xffffffff;
+	}
 
-    ret = write(channel->fd, char_package, sizeof(char_package));
-    if (ret != 0) {
-    	if (arm_verbose) printf("FW-OP invalid length written: %d, exp: %ld\n", ret, sizeof(char_package));
-        return 0xffffffff;
-    }
-   	ret = read(channel->fd, &rx_result, sizeof(address));
-    if (ret != sizeof(address)) {
-    	if (arm_verbose) printf("FW-OP invalid length read: %d, exp: %ld\n", ret, sizeof(address));
-        return 0xffffffff;
-    }
-
-    if (arm_verbose>1) printf("FW-OP recv len:%d: repl:%08x\n", ret, rx_result);
-    return rx_result;
+	if (arm_verbose>1) printf("FW-OP recv len:%d: repl:%08x\n", ret, rx_result);
+	return rx_result;
 }
 
 static void finish_firmware(struct kchannel *channel)
 {
-    uint32_t rx_result;
+	uint32_t rx_result;
 
-    // Finish transfer
-    rx_result = firmware_op(channel, ARM_FIRMWARE_KEY, NULL, 0);
-    if ((rx_result != ARM_FIRMWARE_KEY) && (rx_result != 3)){
-        if (arm_verbose) printf("UNKNOWN ERROR\nREBOOTING...\n");
-    } else {
-        if (arm_verbose) printf("REBOOTING...\n");
-    }
-    usleep(200000);
+	// Finish transfer
+	rx_result = firmware_op(channel, ARM_FIRMWARE_KEY, NULL, 0);
+	if ((rx_result != ARM_FIRMWARE_KEY) && (rx_result != 3)){
+		if (arm_verbose) printf("UNKNOWN ERROR\nREBOOTING...\n");
+	} else {
+		if (arm_verbose) printf("REBOOTING...\n");
+	}
+	usleep(200000);
 }
 
 
@@ -228,7 +209,7 @@ static void channel_close(struct kchannel* channel)
 
 struct kchannel* channel_init(const char* device, int index, uint32_t speed)
 {
-    struct kchannel*  channel = calloc(1, sizeof(struct kchannel));
+	struct kchannel*  channel = calloc(1, sizeof(struct kchannel));
 	if (channel == NULL) return NULL;
 	channel->fd = open(device, O_RDWR);
 	if (channel->fd < 0) {

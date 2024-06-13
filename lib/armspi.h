@@ -31,6 +31,7 @@ typedef  struct {
     uint16_t reg;
 } __attribute__((packed)) arm_comm_header;
 
+/*
 typedef struct {
     uint8_t  op;
     uint8_t  int_status;
@@ -45,9 +46,11 @@ typedef struct {
     uint8_t  channel;
     uint8_t  remain;
 } __attribute__((packed)) arm_comm_str_header;
+*/
 
 //#define ARM_PAGE_SIZE      1024
 //#define ARM_FIRMWARE_KEY   0xAA99FF33
+
 typedef struct {
     uint32_t  address;
     uint8_t   data[ARM_PAGE_SIZE];
