@@ -9,7 +9,10 @@ CLEANFILES += libunipichannel.pc
 
 dist_doc_DATA = AUTHORS README.md
 
-SUBDIRS = lib src/modbus-tools src/firmare-tools
+AM_DISTCHECK_CONFIGURE_FLAGS = \
+  --with-systemdsystemunitdir=$$dc_install_base/$(systemdsystemunitdir)
+
+SUBDIRS = lib src/modbus-tools src/firmware-tools
 
 #if BUILD_TESTS
 #SUBDIRS += tests

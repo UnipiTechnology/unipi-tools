@@ -6,12 +6,12 @@ After=systemd-modules-load.service
 
 [Service]
 Type=simple
-EnvironmentFile=-/etc/default/unipitcp
-ExecStart=/opt/unipi/tools/unipi_tcp_server -l ${LISTEN_IP} -p ${LISTEN_PORT}
+EnvironmentFile=-@sysconfdir@/default/unipitcp
+ExecStart=@exec_prefix@/unipi_tcp_server -l ${LISTEN_IP} -p ${LISTEN_PORT}
 TimeoutStopSec=3
 SyslogLevel=debug
 SyslogIdentifier=unipi
-WorkingDirectory=/opt/unipi/tools
+WorkingDirectory=@exec_prefix@
 
 #WatchdogSec=30s
 #Restart=on-failure

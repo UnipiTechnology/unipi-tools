@@ -29,3 +29,16 @@ DISTCLEANFILES =
 EXTRA_DIST += 
 CLEANFILES = *~
 
+SERVICE_SUBS = \
+    s,[@]exec_prefix[@],$(exec_prefix),g; \
+    s,[@]sysconfdir[@],$(sysconfdir),g
+
+CLEANFILES = *~ unipifwupdate.service
+
+if HAVE_SYSTEMD
+systemdsystemunit_DATA = unipifwupdate.service
+endif
+
+unipifwupdate.service: unipifwupdate.service.in
+	$(SED) -e '$(SERVICE_SUBS)' < $< > $@
+

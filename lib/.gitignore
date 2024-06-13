@@ -1,0 +1,4 @@
+.default
+Makefile
+Makefile.in
+unipichannel-version.h
