@@ -1,4 +1,3 @@
-EXTRA_DIST =
 
 AM_CPPFLAGS = \
     -include $(top_builddir)/config.h \
@@ -11,7 +10,7 @@ AM_CFLAGS = ${my_CFLAGS}
 
 bin_PROGRAMS = unipi_tcp_server r2k
 common_ldflags = \
-	$(top_builddir)/lib/libunipichannel.la
+    $(top_builddir)/lib/libunipichannel.la
 
 unipi_tcp_server_SOURCES = \
     unipi_tcp_server.c \
@@ -26,5 +25,21 @@ r2k_SOURCES = r2k.c
 
 r2k_LDADD = -lmodbus -lmhash
 
+SERVICE_SUBS = \
+    s,[@]exec_prefix[@],$(exec_prefix),g; \
+    s,[@]sysconfdir[@],$(sysconfdir),g
 
-CLEANFILES = *~
+
+if HAVE_SYSTEMD
+systemdsystemunit_DATA = unipitcp.service
+etcdefaultdir=$(sysconfdir)/default
+etcdefault_DATA = .default/unipitcp
+
+.default/unipitcp: unipitcp.default
+	mkdir -p .default && cp unipitcp.default .default/unipitcp
+
+unipitcp.service: unipitcp.service.in
+	$(SED) -e '$(SERVICE_SUBS)' < $< > $@
+endif
+
+CLEANFILES = *~ unipitcp.service .default/unipitcp
