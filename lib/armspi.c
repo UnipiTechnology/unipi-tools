@@ -45,8 +45,8 @@
 
 
 #define ac_header(buf) ((arm_comm_header*)(buf))
-#define ach_header(buf) ((arm_comm_chr_header*)(buf))
-#define acs_header(buf) ((arm_comm_str_header*)(buf))
+//#define ach_header(buf) ((arm_comm_chr_header*)(buf))
+//#define acs_header(buf) ((arm_comm_str_header*)(buf))
 
 #define IDLE_PATTERN 0x0e5500fa
 #define NSS_PAUSE_DEFAULT  10
