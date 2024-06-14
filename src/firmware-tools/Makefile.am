@@ -24,16 +24,15 @@ fwspi_SOURCES = \
 fwspi_CFLAGS = -DFWSPI
 fwspi_LDADD = -lmodbus $(common_ldflags)
 
-
 DISTCLEANFILES =
 EXTRA_DIST += 
-CLEANFILES = *~
+CLEANFILES = *~ unipifwupdate.service
+
 
 SERVICE_SUBS = \
-    s,[@]exec_prefix[@],$(exec_prefix),g; \
+    s,[@]bindir[@],$(bindir),g; \
     s,[@]sysconfdir[@],$(sysconfdir),g
 
-CLEANFILES = *~ unipifwupdate.service
 
 if HAVE_SYSTEMD
 systemdsystemunit_DATA = unipifwupdate.service

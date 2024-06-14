@@ -4,7 +4,7 @@ Before=unipitcp.service
 
 [Service]
 Type=oneshot
-ExecStart=/bin/sh -c '@exec_prefix@/fwspi --auto'
+ExecStart=/bin/sh -c '@bindir@/fwspi --auto'
 ExecStartPost=/bin/systemctl disable unipifwupdate
 
 [Install]
