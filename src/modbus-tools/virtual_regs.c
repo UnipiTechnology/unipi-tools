@@ -258,7 +258,7 @@ static int prv_read_from_files(const char** filelist, uint8_t filelist_size, uin
 			value = -1;
 		}
 		else{
-			fscanf(fp, "%d", &value);
+			if (fscanf(fp, "%d", &value) != 1) value = -1;
 			fclose(fp);
 		}
 
@@ -400,10 +400,10 @@ void monitor_virtual_coils(struct kchannel* channel, uint16_t reg, uint8_t* valu
     int shift = 1001 - reg;
     if (((values[0] >> shift) & 1)== 0) {
         vvprintf("VIRTUAL COIL 1001 mode=on d=%02x\n", values[0]);
-        write(gpio,"1", 1);
+        if (write(gpio,"1", 1)) {}
     } else {
         vvprintf("VIRTUAL COIL 1001 mode=off d=%02x\n", values[0]);
-            write(gpio,"0", 1);
+        if (write(gpio,"0", 1)) {}
     }
     close(gpio);
 }

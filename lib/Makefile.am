@@ -1,5 +1,6 @@
 EXTRA_DIST =
 lib_LTLIBRARIES = libunipichannel.la
+dist_doc_DATA = COPYING.LESSER
 
 AM_CPPFLAGS = \
     -include $(top_builddir)/config.h \

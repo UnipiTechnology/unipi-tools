@@ -26,7 +26,7 @@ r2k_SOURCES = r2k.c
 r2k_LDADD = -lmodbus -lmhash
 
 SERVICE_SUBS = \
-    s,[@]exec_prefix[@],$(exec_prefix),g; \
+    s,[@]sbindir[@],$(sbindir),g; \
     s,[@]sysconfdir[@],$(sysconfdir),g
 
 

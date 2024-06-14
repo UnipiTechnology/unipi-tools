@@ -532,9 +532,11 @@ int main(int argc, char *argv[])
         if (chdir ("/") == -1)  return -1;
         /* close all std file handles and redirect to null */
         close (0); close(1); close(2);
-        open ("/dev/null", O_RDWR);  /* stdin */
-        dup (0);                     /* stdout */
-        dup (0);                     /* stderror */
+        if (!((open ("/dev/null", O_RDWR)==0) && /* stdin */
+              (dup(0)==1) &&                     /* stdout */
+              (dup(0)==2))) {                    /* stderror */
+                /* error opening stderr */
+        }
     }
 
     if (verbose) printf("Starting primary loop\n");
