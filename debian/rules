@@ -21,7 +21,7 @@ clean:
 	dh clean
 
 %:
-	dh $@ --with autoreconf --exclude=.la --install --symlink --force 
+	dh $@ --with autoreconf --exclude=.la
 
 override_dh_auto_configure:
 	dh_auto_configure -- \
@@ -30,6 +30,9 @@ override_dh_auto_configure:
 	    --bindir=/opt/unipi/tools \
 	    --sbindir=/opt/unipi/tools \
 	    --disable-silent-rules
+
+override_dh_autoreconf:
+	./autogen.sh
 
 override_dh_strip:
 	dh_strip --no-automatic-dbgsym
