@@ -7,7 +7,7 @@ pkgconfig_DATA = libunipichannel.pc
 EXTRA_DIST = libunipichannel.pc.in
 CLEANFILES += libunipichannel.pc
 
-dist_doc_DATA = AUTHORS README.md
+dist_doc_DATA = AUTHORS README.md COPYING
 
 AM_DISTCHECK_CONFIGURE_FLAGS = \
   --with-systemdsystemunitdir=$$dc_install_base/$(systemdsystemunitdir)

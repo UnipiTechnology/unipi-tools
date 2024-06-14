@@ -1,0 +1,4 @@
+#! /usr/bin/dh-exec
+
+usr/lib/*/libunipichannel.so.*
+usr/share/doc/unipi-tools/* usr/share/doc/unipi-tools-libs/
