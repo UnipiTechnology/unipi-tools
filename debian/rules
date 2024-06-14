@@ -21,7 +21,7 @@ clean:
 	dh clean
 
 %:
-	dh $@ --with autoreconf --exclude=.la
+	dh $@ --with autoreconf --exclude=.la --install --symlink --force 
 
 override_dh_auto_configure:
 	dh_auto_configure -- \
