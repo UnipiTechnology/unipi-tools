@@ -18,14 +18,14 @@ Description: Shared library to use Unipi SPI interface
 
 Package: unipi-modbus-tools
 Architecture: any
-Depends: lib-unipichannel, ${shlibs:Depends}, ${misc:Depends}
+Depends: unipi-tools-libs, ${shlibs:Depends}, ${misc:Depends}
 Suggests: unipi-kernel-modules | unipi-kernel-modules-dkms, unipi-lte, unipi-flash-diag
 Description: Modbus server for Unipi Neuron/Axon controllers.
  Modbus daemon for UniPi Neuron controllers.
 
 Package: unipi-firmware-tools
 Architecture: any
-Depends: lib-unipichannel, ${shlibs:Depends}, ${misc:Depends}
+Depends: unipi-tools-libs, ${shlibs:Depends}, ${misc:Depends}
 Suggests: unipi-kernel-modules (>=1.42) | unipi-kernel-modules-dkms (>=1.42)
 Description: Firmware utilities for Unipi Neuron/Patron/Axon/Iris controllers.
  Utility for firmware update via SPI or serial Modbus. 
