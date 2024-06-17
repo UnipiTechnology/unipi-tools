@@ -25,6 +25,8 @@
 #include "fwopt.h"
 #include "fwdriver.h"
 
+int verbose = 0;
+
 const char* version_string = "Version " PACKAGE_VERSION; //PROJECT_VER;
 #ifdef FWSERIAL
 const char* program_name = "fwserial";
@@ -38,11 +40,11 @@ const char* program_name = "fwspi";
 void show_board_info(Tboard_version *bv)
 {
     printf("Boardset:   %3d %-30s (v%d.%d%s)\n",
-               HW_BOARD(bv->hw_version),  arm_name(bv->hw_version),
+               HW_BOARD(bv->hw_version),  get_board_name(bv->hw_version),
                HW_MAJOR(bv->hw_version), HW_MINOR(bv->hw_version),
                IS_CALIB(bv->hw_version)?" CAL":"");
     printf("Baseboard:  %3d %-30s (v%d.%d)\n",
-               HW_BOARD(bv->base_hw_version),  arm_name(bv->base_hw_version),
+               HW_BOARD(bv->base_hw_version),  get_board_name(bv->base_hw_version),
                HW_MAJOR(bv->base_hw_version), HW_MINOR(bv->base_hw_version));
 }
 

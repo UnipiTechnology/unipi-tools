@@ -44,16 +44,9 @@
 #include <systemd/sd-daemon.h>
 #endif
 
-//#include "armspi.h"
-//#include "unipiutil.h"
 #include "config.h"
 #include "nb_modbus.h"
-
-
-//int verbose = 0;
-//char spi_devices[3][100] = {"/dev/spidev0.1","/dev/spidev0.3","/dev/spidev0.2"};
-//int spi_speed[3] = {12000000,12000000,12000000};
-//char gpio_int[3][5] = { "27", "23", "22" };
+#include "virtual_regs.h"
 
 const char* version_string = PACKAGE_VERSION;
 
@@ -200,18 +193,6 @@ static int nb_send(int fd, mb_buffer_t* buffer)
 }
 
 
-#if 0
-static void debpr(uint8_t* data, int len)
-{
-        int x;
-        for (x=0; x< len; x++) {
-            printf("%02x ", data[x]);
-        }
-        printf("\n");
-}
-#endif
-
-
 #define RES_WRITE_QUEUE 1
 
 static int parse_buffer(mb_event_data_t* event_data)
@@ -224,9 +205,6 @@ static int parse_buffer(mb_event_data_t* event_data)
         if (buffer == NULL) return 0;
 
         int reqlen = nb_modbus_reqlen(buffer->data, buffer->index);
-
-        //printf("req len = %d\n", reqlen);
-        //debpr( buffer->data, buffer->index);
 
         if (reqlen == 0) return result;
         if (reqlen > MAX_MB_BUFFER_LEN) return -1;   /* bad length in packet header*/
@@ -306,8 +284,7 @@ static void print_usage(const char *progname)
   }
 }
 
-#if 0
-static int parse_slist(char * option, char** results)//, int maxlen)
+__attribute__((unused))static int parse_slist(char * option, char** results)  //, int maxlen)
 {
     int i = 0;
     int len;
@@ -336,7 +313,6 @@ static int parse_slist(char * option, char** results)//, int maxlen)
     }
     return i;
 }
-#endif
 
 static int parse_ilist(char * option, int* results)
 {
@@ -370,10 +346,7 @@ int main(int argc, char *argv[])
     struct epoll_event event;
     struct epoll_event *events;
     mb_event_data_t*  event_data;
-#if 0
-    char *unipi_model;
     struct kchannel *channel;
-#endif
     int poll_timeout = -1;
     int wdtimesec = -1;
 #ifndef UNUSE_SYSTEMD
@@ -463,27 +436,11 @@ int main(int argc, char *argv[])
         }
     }
 
-#if 0  // ToDo  - Vyresit jinak get_unipi_name a zbavit se gpio
-    unipi_model = get_unipi_name();
-    if (unipi_model[0] == '\0')
-	    printf("Running on an unknown platform");
-    else
-	    vvprintf("Running on unipi_model %s\n", unipi_model);
-	channel = get_channel(nb_ctx, 1);
-	if (channel) {
-		/* Check UniPi Model */
-		if ((strncmp(unipi_model, "S205",4) == 0) || (strncmp(unipi_model, "S505",4) == 0)) { /* models with N-1001 have 1W reset via GPIO18 */
-			if (verbose) printf("Using virtual coil 1001 on gpio18\n");
-			channel->has_virtual_coils = VIRTUAL_COILS_NANOPI;
-			system("echo 18 >/sys/class/gpio/export; echo out >/sys/class/gpio/gpio18/direction; echo 1 >/sys/class/gpio/gpio18/value");
-		}
-		else if((strncmp(unipi_model, "S207",4) == 0)){
-			if (verbose) printf("Using virtual coil 1001 on gpio149\n");
-			channel->has_virtual_coils = VIRTUAL_COILS_ZULU;
-			system("echo 149 >/sys/class/gpio/export; echo out >/sys/class/gpio/gpio149/direction; echo 1 >/sys/class/gpio/gpio149/value");
-		}
-	}
-#endif
+    channel = get_channel(nb_ctx, 1);
+    if (channel) {
+        initialize_virtual_coils(channel);
+    }
+
     server_socket = modbus_tcp_listen(nb_ctx->ctx, NB_CONNECTION);
     printf("UniPi TCP Modbus Server: Listening Connection Established RET:%d\n", server_socket);
     if (server_socket == -1) {

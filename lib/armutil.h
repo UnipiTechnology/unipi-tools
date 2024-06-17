@@ -7,15 +7,7 @@
 
 #include "kchannel.h"
 
-#define vprintf( ... ) if (verbose > 0) printf( __VA_ARGS__ )
-#define vvprintf( ... ) if (verbose > 1) printf( __VA_ARGS__ )
-
-#define vprintf_1(f, args...)	if (verbose>=1) printf(f, ##args)
-#define vprintf_2(f, args...)	if (verbose>=2) printf(f, ##args)
-#define eprintf(f, args...)	fprintf(stderr, f, ##args)
-
-extern int verbose;
-extern int arm_verbose;
+extern int lib_verbose;
 
 /* Hardware constants */
 #define PAGE_SIZE   1024
@@ -37,20 +29,6 @@ extern int arm_verbose;
 #define SW_MAJOR(sw)  ((sw) >> 8)
 #define SW_MINOR(sw)  ((sw) & 0xff)
 
-/*typedef struct {
-  uint16_t sw_version;
-  uint16_t hw_version;
-  uint16_t base_hw_version;
-  uint8_t di_count;
-  uint8_t do_count;
-  uint8_t ai_count;
-  uint8_t ao_count;
-  uint8_t uart_count;
-  // ------- not in register block 1000+
-  uint16_t uled_count;
-  uint16_t int_mask_register;
-} Tboard_version;
-*/
 
 typedef struct {
   uint8_t board;
@@ -71,7 +49,7 @@ typedef struct {
 #endif
 
 int parse_version(Tboard_version* bv, uint16_t *r1000);
-const char* arm_name(uint16_t hw_version);//int sw_version, int hw_version);
+const char* get_board_name(uint16_t hw_version);//int sw_version, int hw_version);
 char* firmware_name(Tboard_version* bv, const char* fwdir, const char* ext);
 void print_upboards(int filter);
 int upboard_exists(int board);

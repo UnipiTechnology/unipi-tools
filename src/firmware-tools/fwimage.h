@@ -32,4 +32,10 @@ uint16_t get_image_version(Tboard_version* bv);
 int load_bin(Tboard_version* bv, T_image_header *header, void* prog_data, void* rw_data);
 uint16_t get_bin_version(Tboard_version* bv);
 
+extern int verbose;
+
+#define vvprintf(format, args...) if(verbose >= 1) printf(format, ##args)
+#define vprintf_1(format, args...) if(verbose >= 1) printf(format, ##args)
+#define vprintf_2(format, args...) if(verbose >= 2) printf(format, ##args)
+#define eprintf(format, args...) fprintf(stderr, format, ##args)
 #endif

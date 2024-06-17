@@ -164,7 +164,7 @@ static uint32_t firmware_op(struct kchannel *channel, uint32_t address, uint8_t*
 	}
 	// fill aligned firmware data with void char
 	memset(char_package+ sizeof(address)+tx_len, 0xff, ARM_PAGE_SIZE-tx_len);
-	if (arm_verbose>1)
+	if (lib_verbose>1)
 		printf("FW-OP send len:%ld: addr:%02x%02x%02x%02x\t%02x %02x %02x %02x %02x %02x\n", 
 		        sizeof(char_package), char_package[3], char_package[2], char_package[1], char_package[0],
 		        char_package[4], char_package[5], char_package[6], char_package[7],
@@ -172,16 +172,16 @@ static uint32_t firmware_op(struct kchannel *channel, uint32_t address, uint8_t*
 
 	ret = write(channel->fd, char_package, sizeof(char_package));
 	if (ret != 0) {
-		if (arm_verbose) printf("FW-OP invalid length written: %d, exp: %ld\n", ret, sizeof(char_package));
+		if (lib_verbose) printf("FW-OP invalid length written: %d, exp: %ld\n", ret, sizeof(char_package));
 		return 0xffffffff;
 	}
 	ret = read(channel->fd, &rx_result, sizeof(address));
 	if (ret != sizeof(address)) {
-		if (arm_verbose) printf("FW-OP invalid length read: %d, exp: %ld\n", ret, sizeof(address));
+		if (lib_verbose) printf("FW-OP invalid length read: %d, exp: %ld\n", ret, sizeof(address));
 		return 0xffffffff;
 	}
 
-	if (arm_verbose>1) printf("FW-OP recv len:%d: repl:%08x\n", ret, rx_result);
+	if (lib_verbose>1) printf("FW-OP recv len:%d: repl:%08x\n", ret, rx_result);
 	return rx_result;
 }
 
@@ -192,9 +192,9 @@ static void finish_firmware(struct kchannel *channel)
 	// Finish transfer
 	rx_result = firmware_op(channel, ARM_FIRMWARE_KEY, NULL, 0);
 	if ((rx_result != ARM_FIRMWARE_KEY) && (rx_result != 3)){
-		if (arm_verbose) printf("UNKNOWN ERROR\nREBOOTING...\n");
+		if (lib_verbose) printf("UNKNOWN ERROR\nREBOOTING...\n");
 	} else {
-		if (arm_verbose) printf("REBOOTING...\n");
+		if (lib_verbose) printf("REBOOTING...\n");
 	}
 	usleep(200000);
 }
@@ -213,7 +213,7 @@ struct kchannel* channel_init(const char* device, int index, uint32_t speed)
 	if (channel == NULL) return NULL;
 	channel->fd = open(device, O_RDWR);
 	if (channel->fd < 0) {
-		if (arm_verbose) printf("CHANNELINIT: Cannot open device %s\n", device);
+		if (lib_verbose) printf("CHANNELINIT: Cannot open device %s\n", device);
 		free(channel);
 		return NULL;
 	}

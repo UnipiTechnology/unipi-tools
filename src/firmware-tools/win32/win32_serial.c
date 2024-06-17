@@ -442,10 +442,10 @@ void test_connection_settings(void) {
         parse_version(&bv, r1000);
         snprintf(output_string, sizeof(output_string), "Board:  %s\nE-Board S/N:  (%d)\nBoardset:  %3d %-30s (v%d.%d%s)\nBaseboard:  %3d %-30s (v%d.%d)\nFirmware:  v%d.%d\n",
         		get_extension_map(HW_BOARD(bv.hw_version))->product, (r1000[6] << 16) + r1000[5],
-        	   HW_BOARD(bv.hw_version),  arm_name(bv.hw_version),
+        	   HW_BOARD(bv.hw_version),  get_board_name(bv.hw_version),
                HW_MAJOR(bv.hw_version), HW_MINOR(bv.hw_version),
                IS_CALIB(bv.hw_version)?" CAL":"",
-               HW_BOARD(bv.base_hw_version),  arm_name(bv.base_hw_version),
+               HW_BOARD(bv.base_hw_version),  get_board_name(bv.base_hw_version),
                HW_MAJOR(bv.base_hw_version), HW_MINOR(bv.base_hw_version),
 			   SW_MAJOR(bv.sw_version), SW_MINOR(bv.sw_version));
         gtk_label_set_text(GTK_LABEL(output_label), output_string);
@@ -509,10 +509,10 @@ void flash_button_pressed(GtkButton *caller) {
         parse_version(&bv, r1000);
         printf("Board:  %s\nE-Board S/N:  (%d)\nBoardset:   %3d %-30s (v%d.%d%s)\nBaseboard:  %3d %-30s (v%d.%d)\nFirmware: v%d.%d\n",
         	   get_extension_map(HW_BOARD(bv.hw_version))->product, (r1000[6] << 16) + r1000[5],
-			   HW_BOARD(bv.hw_version),  arm_name(bv.hw_version),
+			   HW_BOARD(bv.hw_version),  get_board_name(bv.hw_version),
                HW_MAJOR(bv.hw_version), HW_MINOR(bv.hw_version),
                IS_CALIB(bv.hw_version)?" CAL":"",
-               HW_BOARD(bv.base_hw_version),  arm_name(bv.base_hw_version),
+               HW_BOARD(bv.base_hw_version),  get_board_name(bv.base_hw_version),
                HW_MAJOR(bv.base_hw_version), HW_MINOR(bv.base_hw_version),
 			   SW_MAJOR(bv.sw_version), SW_MINOR(bv.sw_version));
         //gtk_label_set_text(GTK_LABEL(output_label), output_string);

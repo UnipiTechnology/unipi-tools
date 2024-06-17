@@ -12,8 +12,7 @@
 #define __virtual_regs_h
 
 #include <stdint.h>
-#include "armutil.h"
-#include "armspi.h"
+#include "kchannel.h"
 
 #define OFFSET_V_REGS 3000
 #define OFFSET_PV_REGS 4000
@@ -31,7 +30,8 @@ int write_virtual_bit(struct kchannel* channel, uint16_t reg, uint8_t value, uin
 int write_virtual_bits(struct kchannel* channel, uint16_t reg, uint16_t cnt, uint8_t* values);
 void monitor_virtual_regs(struct kchannel* channel, uint16_t reg, uint16_t* result);
 
-void monitor_virtual_coils(struct kchannel* channel, uint16_t reg, uint8_t* values, uint16_t cnt, int platform);
+void initialize_virtual_coils(struct kchannel* channel);
+void write_virtual_coils(struct kchannel* channel, uint16_t reg, uint8_t* values, uint16_t cnt, int platform);
 
 int read_pure_virtual_regs(uint16_t reg, uint8_t cnt, uint16_t* result);
 
