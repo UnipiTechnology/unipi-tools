@@ -9,10 +9,8 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 
-#include "armspi.h"
 #include "armutil.h"
-//#include "nb_modbus.h"
-//#include "unipiutil.h"
+#include "fwimage.h"
 #include "fwconfig.h"
 
 

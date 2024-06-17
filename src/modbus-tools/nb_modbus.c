@@ -24,21 +24,15 @@
 #include <sys/stat.h>
 
 #include "nb_modbus.h"
-#include "armspi.h"
-#include "armutil.h"
 #include "virtual_regs.h"
 
-//#include "fwimage.h"
 #include "kchannel.h"
+#include "armutil.h"
 
 #include <modbus/modbus-version.h>
 #if LIBMODBUS_VERSION_CHECK(3,1,4) != 1
 //Library_error "YOU NEED libmodbus version min 3.1.4"
 #endif
-
-//int deferred_op = DFR_NONE;
-//arm_handle*  deferred_arm;
-
 
 /* Internal use */
 #define MSG_LENGTH_UNDEFINED -1
@@ -46,7 +40,7 @@
 /* Max between RTU and TCP max adu length (so TCP) */
 #define MAX_MESSAGE_LENGTH 260
 
-
+int verbose = 0;
 
 int nb_modbus_reqlen(uint8_t* data, uint8_t size)
 {
@@ -135,20 +129,11 @@ int nb_modbus_reply(nb_modbus_t *nb_ctx, uint8_t *req, int req_length, int broad
             slave = 1;
         }
     }
-    /*if (slave <= MAX_ARMS) {
-        arm = nb_ctx->arm[slave-1];
-    } else {
-        arm = NULL;
-    }*/
-	channel = get_channel(nb_ctx, slave);
-	if (channel == NULL) {
-		channel = add_channel(nb_ctx, slave, NULL, 0);
-	}
-    /*if (arm == NULL) {
-        return nb_response_exception(
-            nb_ctx->ctx, MODBUS_EXCEPTION_GATEWAY_TARGET, rsp,
-                    "Illegal slave address 0x%0X\n", slave);
-    }*/
+
+    channel = get_channel(nb_ctx, slave);
+    if (channel == NULL) {
+        channel = add_channel(nb_ctx, slave, NULL, 0);
+    }
 
     switch (function) {
     case MODBUS_FC_READ_COILS:
@@ -231,7 +216,7 @@ int nb_modbus_reply(nb_modbus_t *nb_ctx, uint8_t *req, int req_length, int broad
             n =  (channel==NULL) ? -1 : channel->write_bit(channel, address, data ? 1 : 0, 0);
             if (channel && channel->has_virtual_coils && (address == 1001)) {
                 data = data ? 1 : 0;
-                monitor_virtual_coils(channel, address, (uint8_t*)(&data), 1, channel->has_virtual_coils); // monitoring coil changes
+                write_virtual_coils(channel, address, (uint8_t*)(&data), 1, channel->has_virtual_coils); // monitoring coil changes
             }
             if (n == 1) {
                 rsp_length += 4; // = req_length;
@@ -287,7 +272,7 @@ int nb_modbus_reply(nb_modbus_t *nb_ctx, uint8_t *req, int req_length, int broad
             n = (channel==NULL) ? -1 : channel->write_bits(channel, address, nb, rsp+rsp_length + 5);
             if ( n == nb ) {
                 if (channel && channel->has_virtual_coils && (address <= 1001) && (address+nb > 1001)) {
-                    monitor_virtual_coils(channel, address, rsp+rsp_length + 5, nb, channel->has_virtual_coils); // monitoring coil changes
+                    write_virtual_coils(channel, address, rsp+rsp_length + 5, nb, channel->has_virtual_coils); // monitoring coil changes
                 }
                 rsp_length += 4;
             } else if (n < 0) {
@@ -413,37 +398,26 @@ void nb_modbus_free(nb_modbus_t*  nb_ctx)
 struct kchannel* add_channel(nb_modbus_t*  nb_ctx, uint8_t index, const char *device, int speed)
 {
 	char channelname[sizeof(UNIPICHANNELNAME)+3];
-	const char *filename;
 	struct kchannel *channel, *c, **last;
-	struct kchannel* (*init_func) (const char*,int,uint32_t);
-
 	int ret;
-/*    if (index >= MAX_ARMS) 		// Too many devices
-        return -1;
-*/
-	arm_verbose = verbose;
+
+	lib_verbose = verbose;
 	sprintf(channelname, UNIPICHANNELNAME, index);
 
-	if (arm_verbose) printf("ADD CHANNEL: %s\n", channelname);
+	if (verbose) printf("ADD CHANNEL: %s\n", channelname);
 
 	ret = access(channelname, R_OK | W_OK);
 	if (ret == 0) {
-		filename = channelname;
-		init_func = channel_init;
-	} else if (device==NULL) {
-		return NULL;
+		channel = channel_init(channelname, index, speed);
 	} else {
-		filename = device;
-		ret = access(device, R_OK | W_OK);
-		if (ret == 0) {
-			init_func = arm_init;
-		} else {
+		if ((device==NULL) || (access(device, R_OK | W_OK)!=0)) {
 			//printf("Error open file %s, %s\n", filename, strerror(ret));
 			return NULL;
 		}
+		channel = arm_init(device, index, speed);
 	}
-	channel = init_func(filename, index, speed);
 	if (channel == NULL) return NULL;
+	/* append channel to nb_ctc->channel */
 	c = nb_ctx->channel;
 	last = &nb_ctx->channel;
 	while (c != NULL) {
@@ -453,7 +427,7 @@ struct kchannel* add_channel(nb_modbus_t*  nb_ctx, uint8_t index, const char *de
 	}
 	channel->next = c;
 	*last = channel;
-	if (arm_verbose) printf("ADD CHANNEL: OK\n");
+	if (verbose) printf("ADD CHANNEL: OK\n");
 	return channel;
 }
 
@@ -485,4 +459,3 @@ struct kchannel* get_channel(nb_modbus_t*  nb_ctx, uint8_t index)
 	    return c;
 	return NULL;
 }
-

@@ -5,10 +5,8 @@
 #include <stdio.h>
 
 #include "armutil.h"
-//#include "fwimage.h"
 
-int verbose = 0;
-int arm_verbose = 0;
+int lib_verbose = 0;
 
 typedef struct {
   uint8_t board;
@@ -31,25 +29,25 @@ Tboards_map up_boards[] = {
 };
 
 Textension_map extension_boards[] = {
-	{1, 4, "xS10-CAL"},
-	{2, 5, "xS40-CAL"},
-	{3, 6, "xS30-CAL"},
-	{4, 4, "xS10"},
-	{5, 5, "xS40"},
-	{6, 6, "xS30"},
-	{11, 12, "xS50-CAL"},
-	{12, 12, "xS50"},
-	{16, 16, "X-1Ir"},
-	{17, 17, "MM-8OW"},
-	{21, 21, "MM-8PT"}
+    {1, 4, "xS10-CAL"},
+    {2, 5, "xS40-CAL"},
+    {3, 6, "xS30-CAL"},
+    {4, 4, "xS10"},
+    {5, 5, "xS40"},
+    {6, 6, "xS30"},
+    {11, 12, "xS50-CAL"},
+    {12, 12, "xS50"},
+    {16, 16, "X-1Ir"},
+    {17, 17, "MM-8OW"},
+    {21, 21, "MM-8PT"}
 };
 
 Textension_map* get_extension_map(int board) {
     int i;
     for (i=0; i<EXTENSION_COUNT; i++) {
-            if (extension_boards[i].board == board) {
-                return extension_boards + i;
-            }
+        if (extension_boards[i].board == board) {
+            return extension_boards + i;
+        }
     }
     return NULL;
 }
@@ -58,9 +56,9 @@ static Tboards_map* get_umap(int board)
 {
     int i;
     for (i=0; i<UP_COUNT; i++) {
-            if (up_boards[i].board == board) {
-                return up_boards + i;
-            }
+        if (up_boards[i].board == board) {
+            return up_boards + i;
+        }
     }
     return NULL;
 }
@@ -100,14 +98,11 @@ static Tcompatibility_map* get_map(int board)
             return compatibility_map + i;
         }
     }
-        /*if (board < HW_COUNT) {
-            return hwnames[board];
-        }*/
     return NULL;
 }
 
 
-const char* arm_name(uint16_t hw_version)
+const char* get_board_name(uint16_t hw_version)
 {
     Tcompatibility_map* map = get_map(HW_BOARD(hw_version));
     if (map == NULL)
@@ -164,14 +159,14 @@ static char* _firmware_name(Tboard_version* bv, const char* fwdir, const char* e
 
 char* firmware_name(Tboard_version* bv, const char* fwdir, const char* ext)
 {
-	char * fname = _firmware_name(bv, fwdir, ext, 1);
+    char * fname = _firmware_name(bv, fwdir, ext, 1);
     FILE* fd = fopen(fname, "r");
     if (fd != NULL) {
         fclose(fd);
         return fname;
     }
     free(fname);
-	return _firmware_name(bv, fwdir, ext, 0);
+    return _firmware_name(bv, fwdir, ext, 0);
 }
 
 int check_compatibility(int hw_base, int upboard)
@@ -223,29 +218,11 @@ int parse_version(Tboard_version* bv, uint16_t *r1000)
     bv->hw_version = r1000[3];
     bv->base_hw_version = r1000[4];
 
-/*    bv->di_count    = (r1000[1]       ) >> 8;
-    bv->do_count   = (r1000[1] & 0xff);
-    bv->ai_count   = (r1000[2]       ) >> 8;
-    bv->ao_count   = (r1000[2] & 0xff) >> 4;
-    bv->uart_count = (r1000[2] & 0x0f);
-    bv->uled_count = 0;
-    bv->int_mask_register = 1007;
-*/
     if (SW_MAJOR(bv->sw_version) < 4) {
         bv->hw_version = (SW_MINOR(bv->sw_version) & 0xff) << 4 \
                        | (SW_MINOR(bv->sw_version) & 0x0f);
         bv->sw_version = bv->sw_version & 0xff00;
-//        bv->int_mask_register = 1003;
-    } else {
-//        if ((bv->sw_version < 0x0403)) {  // devel version
-//           bv->int_mask_register = 1004;
-//        }
-//        if (HW_BOARD(bv->hw_version) == 0) {
-//            if (bv->sw_version != 0x0400)
-//                bv->uled_count = 4;
-//        }
     }
-//    if ((HW_BOARD(bv->base_hw_version) == 0x0b) && (HW_MAJOR(bv->base_hw_version) <= 1)) bv->int_mask_register = 0;   // 4Ai4Ao has not interrupt
     return 0;
 }
 

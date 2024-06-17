@@ -20,11 +20,11 @@
 #include <math.h>
 #include <fcntl.h>
 
-//#include "armspi.h"
-//#include "armutil.h"
+#include "armutil.h"
 #include "kchannel.h"
+#include "nb_modbus.h"
 #include "virtual_regs.h"
-//#include "unipiutil.h"
+
 
 typedef struct __attribute__ ((__packed__)) __attribute__ ((aligned(8))) {
     uint16_t ao_sw;
@@ -332,7 +332,7 @@ int write_virtual_regs(struct kchannel* channel, uint16_t reg, uint8_t cnt, uint
             }
             if ((reg==3000) && (cnt >=2)) {
                 fval = *((float*)values);
-                vvprintf("VIRTUAL REGS write fval=%f\n",fval);
+                if(verbose >= 1) printf("VIRTUAL REGS write fval=%f\n",fval);
                 regval = ao_float2reg(fval);
                 if (channel->write_regs(channel, 2, 1, &regval)!=1) return -1;
                 return cnt;
@@ -384,31 +384,34 @@ void monitor_virtual_regs(struct kchannel* channel, uint16_t reg, uint16_t* resu
     }
 }
 
-void monitor_virtual_coils(struct kchannel* channel, uint16_t reg, uint8_t* values, uint16_t cnt, int platform)
+const char unipi_w1bus_path[] = "/run/unipi-plc/by-sys/unipi-w1bus/state";
+void initialize_virtual_coils(struct kchannel* channel)
+{
+    int w1bus = open(unipi_w1bus_path, O_RDWR);
+    if (w1bus < 0) {
+        channel->has_virtual_coils = 0;
+        return;
+    }
+    close(w1bus);
+    channel->has_virtual_coils = 1;
+}
+
+void write_virtual_coils(struct kchannel* channel, uint16_t reg, uint8_t* values, uint16_t cnt, int platform)
 {
 
-    char* gpio_1w_reset_path = NULL;
-
-    if (platform == VIRTUAL_COILS_NANOPI)
-        gpio_1w_reset_path = "/sys/class/gpio/gpio18/value";
-    else if(platform == VIRTUAL_COILS_ZULU)
-        gpio_1w_reset_path = "/sys/class/gpio/gpio149/value";
-
-    int gpio = open(gpio_1w_reset_path, O_WRONLY);
-    if (gpio < 0) return;
-
     int shift = 1001 - reg;
+    int w1bus = open(unipi_w1bus_path, O_WRONLY);
+    if (w1bus < 0) {
+        return;
+    }
     if (((values[0] >> shift) & 1)== 0) {
         vvprintf("VIRTUAL COIL 1001 mode=on d=%02x\n", values[0]);
-        if (write(gpio,"1", 1)) {}
+        if (write(w1bus, "enabled", 7)) {}
     } else {
         vvprintf("VIRTUAL COIL 1001 mode=off d=%02x\n", values[0]);
-        if (write(gpio,"0", 1)) {}
+        if (write(w1bus, "disabled", 8)) {}
     }
-    close(gpio);
+    close(w1bus);
 }
-//int read_virtual_bits(arm_handle* arm, uint16_t reg, uint16_t cnt, uint8_t* result);
-//int write_virtual_bit(arm_handle* arm, uint16_t reg, uint8_t value, uint8_t do_lock);
-//int write_virtual_bits(arm_handle* arm, uint16_t reg, uint16_t cnt, uint8_t* values);
 
 

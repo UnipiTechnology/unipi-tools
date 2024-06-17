@@ -8,6 +8,7 @@
 
 #include "fwconfig.h"
 #include "fwdriver.h"
+#include "fwimage.h"
 
 #ifdef FWSPI
 
@@ -20,15 +21,15 @@ void* fwspi_open(struct comopt_struct *comopt)
 	//arm_handle* arm = malloc(sizeof(arm_handle));
 	struct kchannel* channel;
 
-	arm_verbose=verbose;
+	lib_verbose=verbose;
 	if ( comopt->DEVICE_ID == -1) {
 		channel = channel_init(comopt->PORT , -1, comopt->BAUD);
 		if (channel==NULL && verbose >=0)
-			eprintf("Unable to open device file %s\n", comopt->PORT);
+			fprintf(stderr, "Unable to open device file %s\n", comopt->PORT);
 	} else {
 		channel = arm_init(comopt->PORT , (comopt->DEVICE_ID+1) | UNLOCK_FLAG, comopt->BAUD);
 		if (channel==NULL && verbose >=0)
-			eprintf("Unable to create the arm[%d] context\n", comopt->DEVICE_ID);
+			fprintf(stderr, "Unable to create the arm[%d] context\n", comopt->DEVICE_ID);
 	}
 
 	return channel;
@@ -66,7 +67,7 @@ int fwspi_start(void* channel)
 	if (kchannel) {
 		ret = flock(kchannel->fd, LOCK_EX);
 		if (ret < 0) {
-			vprintf_1("Error lock %d", ret);
+			if (verbose>=1) printf("Error lock %d", ret);
 			return ret;
 		}
 		bv = kchannel->get_version(kchannel);
@@ -112,7 +113,7 @@ static int do_one_page(struct kchannel* kchannel, uint32_t flash_addr, uint8_t* 
 {
 	int rx_result, rx_result1, err;
 
-	vprintf_1("\r%04x ", flash_addr);
+	if (verbose>=1) printf("\r%04x ", flash_addr);
 	err = 0;
 	while (loop-- > 0) {
 		fflush(stdout);
@@ -120,13 +121,13 @@ static int do_one_page(struct kchannel* kchannel, uint32_t flash_addr, uint8_t* 
 		usleep(100000);
 		rx_result = kchannel->firmware_op(kchannel, 0xF201, NULL, 0);
 		if ((rx_result == ARM_FIRMWARE_KEY) && (rx_result1 == 3)) {
-			vprintf_1("OK%s", err ? "\n" : "");
+			if (verbose>=1) printf("OK%s", err ? "\n" : "");
 			fflush(stdout);
 			return 0;
 		}
-		vprintf_1("E ");
+		if (verbose>=1) printf("E ");
 	}
-	vprintf("Cannot write page %d\n", flash_addr);
+	if (verbose>=1) printf("Cannot write page %d\n", flash_addr);
 	return -1;
 }
 
@@ -148,7 +149,7 @@ int  fwspi_flash(void* channel, struct page_description *pd_array, int count, in
 			kchannel->write_bit(kchannel, 1004, 1, (kchannel->index));
 		}
 		if (loop++ > 5) {
-			vprintf("ERR START\n");
+			if (verbose>=0) printf("ERR START\n");
 			return -1;
 		}
 	}
@@ -159,7 +160,7 @@ int  fwspi_flash(void* channel, struct page_description *pd_array, int count, in
 			return -1;
 		}
 	}
-	vprintf_1("\n");
+	if (verbose>=1) printf("\n");
 	return 0;
 }
 
@@ -194,14 +195,14 @@ void* fwserial_open(struct comopt_struct *comopt)
     modbus_t *ctx = modbus_new_rtu(comopt->PORT , comopt->BAUD, comopt->parity, 8, comopt->stopbit);
 
     if (ctx == NULL) {
-        eprintf("Unable to create the libmodbus context\n");
+        fprintf(stderr, "Unable to create the libmodbus context\n");
         return NULL;
     }
     if ( verbose > 1) modbus_set_debug(ctx,verbose-1);
     modbus_set_slave(ctx, comopt->DEVICE_ID);
 
     if (modbus_connect(ctx) == -1) {
-        eprintf("Connection failed: %s\n", modbus_strerror(errno));
+        fprintf(stderr, "Connection failed: %s\n", modbus_strerror(errno));
         modbus_free(ctx);
         return NULL;
     }
@@ -239,42 +240,42 @@ void fwserial_reopen(void* channel, struct comopt_struct *comopt)
 Tboard_version* fwserial_identify(void* channel)
 {
     struct serial_handle *handle = channel;
-	uint16_t r1000[5];
+    uint16_t r1000[5];
     if (modbus_read_registers(handle->ctx, 1000, 5, r1000) != 5) {
-        eprintf("Identity registers reading failed: %s\n", modbus_strerror(errno));
-		return NULL;
-	}
+        fprintf(stderr, "Identity registers reading failed: %s\n", modbus_strerror(errno));
+        return NULL;
+    }
     parse_version(&handle->bv, r1000);
-	return &handle->bv;
+    return &handle->bv;
 }
 
 int fwserial_start(void* channel)
 {
     struct serial_handle *handle = channel;
-	if (modbus_write_bit(handle->ctx, 1006, 1) != 1) {
-		eprintf("Program mode setting failed: %s\n", modbus_strerror(errno));
-		return 1;
-	}
-	return 0;
+    if (modbus_write_bit(handle->ctx, 1006, 1) != 1) {
+        fprintf(stderr, "Program mode setting failed: %s\n", modbus_strerror(errno));
+        return 1;
+    }
+    return 0;
 }
 
 int fwserial_run(void* channel)
 {
     struct serial_handle *handle = channel;
-	modbus_write_register(handle->ctx, 0x7707, 3);
-	return 0;
+    modbus_write_register(handle->ctx, 0x7707, 3);
+    return 0;
 }
 
 int fwserial_confirm(void* channel)
 {
     struct serial_handle *handle = channel;
-	return (modbus_write_bit(handle->ctx, 1004, 0) != 1);
+    return (modbus_write_bit(handle->ctx, 1004, 0) != 1);
 }
 
 int fwserial_reboot(void* channel)
 {
     struct serial_handle *handle = channel;
-	return (modbus_write_bit(handle->ctx, 1002, 1) != 1);
+    return (modbus_write_bit(handle->ctx, 1002, 1) != 1);
 }
 
 /* Flash and verify on page. Exit on any error */
@@ -287,7 +288,7 @@ int flashpage(modbus_t *ctx, uint8_t* prog_data, uint32_t flash_start, int do_ve
 	//modbus_set_response_timeout(ctx, 1, 0);
     page = flash_start / PAGE_SIZE;
 	if (!verbose) printf(".");
-	vprintf_1("Programming page %.2d ...", page);
+	if (verbose>=1) printf("Programming page %.2d ...", page);
 	fflush(stdout);
 
 	pd = (uint16_t*) prog_data;
@@ -311,15 +312,15 @@ int flashpage(modbus_t *ctx, uint8_t* prog_data, uint32_t flash_start, int do_ve
 		}
 		if (modbus_read_registers(ctx, 0x7707, 1, &val) != 1) goto err;
 		if (val != 0x100) {
-			vprintf_1("Verify failed.\n");
+			if (verbose>=1) printf("Verify failed.\n");
 			return -1;
 		}
 	}
-	vprintf_1("OK.\n");
+	if (verbose>=1) printf("OK.\n");
 	return 0;
 
 err:
-	vprintf_1("Failed.\n");
+	if (verbose>=1) printf("Failed.\n");
 	return -1;
 }
 

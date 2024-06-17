@@ -20,15 +20,6 @@ typedef struct {
   uint16_t sw_version;
   uint16_t hw_version;
   uint16_t base_hw_version;
-/*  uint8_t di_count;
-  uint8_t do_count;
-  uint8_t ai_count;
-  uint8_t ao_count;
-  uint8_t uart_count;
-  // ------- not in register block 1000+
-  uint16_t uled_count;
-  uint16_t int_mask_register;
-*/
 } Tboard_version;
 
 
@@ -39,7 +30,7 @@ struct kchannel {
 	int has_virtual_coils;
 	Tboard_version _bv;
 	struct kchannel* next;
-	struct kchannel* (*open_channel)(int modbus_index);
+	//struct kchannel* (*open_channel)(int modbus_index);
 	void (*close)(struct kchannel* channel);
 	int (*read_regs)(struct kchannel* channel, uint16_t reg, uint8_t cnt, uint16_t* result);
 	int (*write_regs)(struct kchannel* channel, uint16_t reg, uint8_t cnt, uint16_t* values);
