@@ -15,5 +15,5 @@ AM_DISTCHECK_CONFIGURE_FLAGS = \
 SUBDIRS = lib src/modbus-tools src/firmware-tools
 
 #if BUILD_TESTS
-#SUBDIRS += tests
+SUBDIRS += tests
 #endif

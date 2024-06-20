@@ -151,6 +151,7 @@ AC_CONFIG_FILES([
         lib/unipichannel-version.h
         src/modbus-tools/Makefile
         src/firmware-tools/Makefile
+        tests/Makefile
         libunipichannel.pc
 ])
 
