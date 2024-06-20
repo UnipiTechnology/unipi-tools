@@ -145,7 +145,7 @@ int  fwspi_flash(void* channel, struct page_description *pd_array, int count, in
 		if (rx_result == ARM_FIRMWARE_KEY) {
 			break;
 		}
-		if (rx_result == 0x0e5500fa) {
+		if ((rx_result & 0xffff00ff) == 0x0e5500fa) {
 			kchannel->write_bit(kchannel, 1004, 1, (kchannel->index));
 		}
 		if (loop++ > 5) {
