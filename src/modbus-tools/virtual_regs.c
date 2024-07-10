@@ -282,9 +282,8 @@ const char* filelist_b[] = {"/var/run/unipi_lte/mode",
 				"/var/run/unipi_lte/sigqual"
 };
 
-int read_pure_virtual_regs(uint16_t reg, uint8_t cnt, uint16_t* result)
+static int read_pure_virtual_regs_legacy(uint16_t reg, uint8_t cnt, uint16_t* result)
 {
-    vvprintf("Reading pure virtual reg: %u cnt: %u\n", reg, cnt);
 
     reg = reg - OFFSET_PV_REGS;
     const char ** filelist = NULL;
@@ -310,6 +309,45 @@ int read_pure_virtual_regs(uint16_t reg, uint8_t cnt, uint16_t* result)
 
     return prv_read_from_files(filelist, filelist_size, reg, cnt, result);
 
+}
+
+static int prv_read_file(char* path)
+{
+    vvprintf("Opening file %s \n", path);
+    FILE *fp;
+    int value;
+    fp = fopen(path ,"r");
+    if(fp == NULL)
+        return -1;
+
+    if (fscanf(fp, "%d", &value) != 1)
+        value = -2;
+    fclose(fp);
+    return value;
+}
+
+
+int read_pure_virtual_regs(uint16_t reg, uint8_t cnt, uint16_t* result)
+{
+    char path[256];
+    int val, i;
+
+    vvprintf("Reading pure virtual reg: %u cnt: %u\n", reg, cnt);
+
+    for (i=0; i< cnt; i++) {
+        snprintf(path, sizeof(path), "/run/unipi-plc/virtual-regs/%d", reg+i);
+        val = prv_read_file(path);
+        if (val >= 0) {
+            *result = val & 0xffff;
+            result++;
+        } else if (val == -1) {
+            return read_pure_virtual_regs_legacy(reg, cnt-i, result);
+            return 0;  /* Illegal register number */
+        } else {
+            return -1; /* Illegal data value */
+        }
+    }
+    return cnt;
 }
 
 int write_virtual_regs(struct kchannel* channel, uint16_t reg, uint8_t cnt, uint16_t* values)
@@ -413,5 +451,4 @@ void write_virtual_coils(struct kchannel* channel, uint16_t reg, uint8_t* values
     }
     close(w1bus);
 }
-
 
