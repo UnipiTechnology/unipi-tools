@@ -1,3 +1,0 @@
-Package: *
-Pin: release o=unipi,c=zulu-main
-Pin-Priority: 900

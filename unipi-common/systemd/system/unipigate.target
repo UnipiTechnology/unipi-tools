@@ -1,3 +1,0 @@
-[Unit]
-Description=Gate Target
-After=basic.target

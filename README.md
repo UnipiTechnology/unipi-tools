@@ -1,8 +1,32 @@
-**Neuron Modbus utilities**
+# Unipi Tools for Unipi PLC
 
-armspi.o (et al.) 	- library for spi communication with UniPi devices
+Basic tools for communicating with I/O on Unipi PLC (Neuron, Axon, Patron, Iris)
 
-unipi_tcp_server 	- UniPi Modbus TCP server - proxy to spi
-fwspi				- UniPi Modbus flashing utility for UniPi devices
-fwserial			- RTC UART Modbus flashing utility for UniPi devices
+- unipi_modbus_tcp - Modbus TCP server allowing access to I/O
+- fwspi - firmware update utility to flash internal modules via SPI
+- fwserial - firmware update utility to flash Unipi Extensions connected via RS-485
+- libunipichannel.so - library to directly talk to I/O via kernel modules
 
+## Building
+
+Required tools and libraries for successful build:
+  - libmodbus libsystemd libmhash
+  - pkg-config autotools autoconf automake libtool
+
+On Debian install this packages.
+```
+apt-get install libmodbus-dev libsystemd-dev libmhash-dev
+apt-get install pkg-config autotools-dev autoconf automake libtool
+```
+Configure build and install tools:
+```
+./autogen.sh
+./configure --prefix=/usr --sysconfdir=/etc 
+make
+make install
+```
+
+## License
+License GPL-2.0
+
+License LGPL-2.1 for library 
