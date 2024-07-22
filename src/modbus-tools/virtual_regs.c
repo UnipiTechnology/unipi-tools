@@ -1,0 +1,454 @@
+/*
+ * SPI communication with UniPi Neuron and Axon families of controllers
+ *
+ * Copyright (c) 2016  Faster CZ, ondra@faster.cz
+ * Copyright (c) 2007  MontaVista Software, Inc.
+ * Copyright (c) 2007  Anton Vorontsov <avorontsov@ru.mvista.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License.
+ *
+ * Cross-compile with cross-gcc -I/path/to/cross-kernel/include
+ */
+
+#include <stdint.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <fcntl.h>
+
+#include "armutil.h"
+#include "kchannel.h"
+#include "nb_modbus.h"
+#include "virtual_regs.h"
+
+
+typedef struct __attribute__ ((__packed__)) __attribute__ ((aligned(8))) {
+    uint16_t ao_sw;
+    uint16_t ao_v_dev;
+    uint16_t ao_v_offs;
+    uint16_t ao_a_dev;
+    uint16_t ao_a_offs;
+    uint16_t ai_sw;
+    uint16_t ai_v_dev1;
+    uint16_t ai_v_offs1;
+    uint16_t ai_a_dev1;
+    uint16_t ai_a_offs1;
+    uint16_t ai_v_dev2;
+    uint16_t ai_v_offs2;
+} Tcalibration;
+
+
+int loaded = 0;
+int use_calibration = 0;
+Tcalibration calibration  __attribute__((aligned (4)));
+float vmul0, vmul1, vmul2, amul0, amul1;
+float voffs0, voffs1, voffs2, aoffs0, aoffs1;
+
+float fvalues[3]; // __attribute__((packed));
+
+// function pointers
+uint16_t (*ao_float2reg)(float);
+float (*ao_reg2float)(uint16_t);
+float (*ai1_reg2float)(uint16_t);
+float (*ai2_reg2float)(uint16_t);
+
+
+// without calibration
+static uint16_t aov_float2reg(float value)
+{
+    long lv = roundf(value/vmul0);
+    if (lv < 0) return 0;
+    if (lv > 4095) return 4095;
+    return lv;
+}
+
+static uint16_t aoa_float2reg(float value)
+{
+    long lv = roundf(value/amul0);
+    if (lv < 0) return 0;
+    if (lv > 4095) return 4095;
+    return lv;
+}
+
+static float aov_reg2float(uint16_t regvalue)
+{
+    return vmul0 * regvalue;
+}
+
+static float aoa_reg2float(uint16_t regvalue)
+{
+    return amul0 * regvalue;
+}
+
+static float aor_reg2float(uint16_t regvalue)
+{
+    return fvalues[2]; //return resistance - must be already calculated!!!
+}
+
+static float aiv1_reg2float(uint16_t regvalue)
+{
+    if (((int16_t) regvalue) < 0) return 0.0;
+    return vmul1 * regvalue;
+}
+
+static float aia1_reg2float(uint16_t regvalue)
+{
+    if (((int16_t) regvalue) < 0) return 0.0;
+    return amul1 * regvalue;
+}
+
+static float aiv2_reg2float(uint16_t regvalue)
+{
+    if (((int16_t) regvalue) < 0) return 0.0;
+    return vmul2 * regvalue;
+}
+
+static float air2_reg2float(uint16_t regvalue)
+{
+    return  regvalue/10.0;
+}
+
+// WITH CALIBRATION
+static uint16_t aov_float2regc(float value)
+{
+    long lv = roundf((value-voffs0)/vmul0);
+    if (lv < 0) return 0;
+    if (lv > 4095) return 4095;
+    return lv;
+}
+
+static uint16_t aoa_float2regc(float value)
+{
+    long lv = roundf((value-aoffs0)/amul0);
+    if (lv < 0) return 0;
+    if (lv > 4095) return 4095;
+    return lv;
+}
+
+static float aov_reg2floatc(uint16_t regvalue)
+{
+    return vmul0 * regvalue + voffs0;
+}
+
+static float aoa_reg2floatc(uint16_t regvalue)
+{
+    return amul0 * regvalue + aoffs0;
+}
+
+static float aiv1_reg2floatc(uint16_t regvalue)
+{
+    if (((int16_t) regvalue) < 0) return 0.0;
+    return vmul1 * regvalue + voffs1;
+}
+
+static float aia1_reg2floatc(uint16_t regvalue)
+{
+    if (((int16_t) regvalue) < 0) return 0.0;
+    return amul1 * regvalue + aoffs1;
+}
+
+static float aiv2_reg2floatc(uint16_t regvalue)
+{
+	if (((int16_t) regvalue) < 0) return 0.0;
+    return vmul2 * regvalue + voffs2;
+}
+
+
+static void set_fp_by_mode(void)
+{
+    if (calibration.ao_sw == 3) {
+        ao_float2reg = use_calibration ? aov_float2regc : aov_float2reg;
+        ai2_reg2float = air2_reg2float;
+        ao_reg2float = aor_reg2float;
+    } else if (calibration.ao_sw == 1) {
+        ao_float2reg = use_calibration ? aoa_float2regc : aoa_float2reg;
+        ao_reg2float = use_calibration ? aoa_reg2floatc : aoa_reg2float;
+        ai2_reg2float = use_calibration ? aiv2_reg2floatc : aiv2_reg2float;
+    } else {
+        ao_float2reg = use_calibration ? aov_float2regc : aov_float2reg;
+        ao_reg2float = use_calibration ? aov_reg2floatc : aov_reg2float;
+        ai2_reg2float = use_calibration ? aiv2_reg2floatc : aiv2_reg2float;
+    }
+    if (calibration.ai_sw == 1) {
+        ai1_reg2float = use_calibration ? aia1_reg2floatc : aia1_reg2float;
+    } else {
+        ai1_reg2float = use_calibration ? aiv1_reg2floatc : aiv1_reg2float;
+    }
+}
+
+static void load_calibrating_const(struct kchannel* channel)
+{
+    uint16_t vrefint, vref;
+    int n;
+
+    n = channel->read_regs(channel, 1019, 12, (uint16_t*) &calibration);
+    if (n != 12) return;
+    n = channel->read_regs(channel, 1009, 1, &vrefint);
+    if (n != 1) return;
+    n = channel->read_regs(channel, 5, 1,  &vref);
+    if (n != 1) return;
+    vmul2 =  (3.3 * vrefint) / vref /4096;
+    vmul0 = vmul1 = vmul2 * 3;
+    amul0 = amul1 = vmul2 * 10;
+    use_calibration = (calibration.ao_v_dev != 0xffff) && ((calibration.ao_v_dev!=0) || (calibration.ao_v_offs!=0));
+    if (use_calibration) {
+        voffs0 = vmul0*(calibration.ao_v_offs)/10000.0;
+        vmul0  = vmul0*(1.0+calibration.ao_v_dev/10000.0);
+        aoffs0 = amul0*(calibration.ao_a_offs)/10000.0;
+        amul0  = amul0*(1.0+calibration.ao_a_dev/10000.0);
+        voffs1 = vmul1*(calibration.ai_v_offs1)/10000.0;
+        vmul1  = vmul1*(1.0+calibration.ai_v_dev1/10000.0);
+        aoffs1 = amul1*(calibration.ai_a_offs1)/10000.0;
+        amul1  = amul1*(1.0+calibration.ai_a_dev1/10000.0);
+        voffs2 = vmul2*(calibration.ai_v_offs2)/10000.0;
+        vmul2  = vmul2*(1.0+calibration.ai_v_dev2/10000.0);
+    }
+    set_fp_by_mode();
+    loaded = 1;
+    vvprintf("VIRTUAL REGS Vref=%5.3f use_calibration=%d\n", (3.3 * vrefint) / vref, use_calibration);
+}
+
+
+int read_virtual_regs(struct kchannel* channel, uint16_t reg, uint8_t cnt, uint16_t* result)
+{
+    int n, r0;
+    uint16_t registers[3];
+    Tboard_version *bv;
+    if (channel == NULL) return 0;
+    bv = channel->get_version(channel);
+    if ((HW_BOARD(bv->base_hw_version)==0)||(HW_BOARD(bv->base_hw_version)==0xd)) { //
+        if ((reg >= 3000) && (reg+cnt <= 3006)) { // Area of SW computed float values form Brain
+            if (! loaded) {
+                load_calibrating_const(channel);
+                if (! loaded) return -1;
+            }
+            n = channel->read_regs(channel, 2, 3, registers);         // ao, ai1, ai2
+            if (n != 3) return -1;                       // illegal value
+            fvalues[2] = ai2_reg2float(registers[2]);    // must be first
+            fvalues[1] = ai1_reg2float(registers[1]);
+            fvalues[0] = ao_reg2float(registers[0]);
+            vvprintf("VIRTUAL REGS fvalues=%f %f %f\n",fvalues[0],fvalues[1],fvalues[2]);
+            r0 = reg-3000;
+            memcpy(result, ((uint16_t*)&fvalues)+r0, cnt*sizeof(uint16_t));
+            return cnt;
+        } else
+            return 0;
+    } else {
+        return 0; // Illegal register address
+    }
+}
+
+static int prv_read_from_files(const char** filelist, uint8_t filelist_size, uint16_t reg, uint8_t cnt, uint16_t* result)
+{
+	//if (reg + cnt > (sizeof(filelist) / sizeof(filelist[0])) || (reg < 0)) { //Check bounds
+	if (reg + cnt > filelist_size || (reg < 0)) { //Check bounds
+		return 0;
+	}
+
+	for (int i=reg; i < reg + cnt; i++) {
+		vvprintf("Opening file %s \n", filelist[i]);
+		FILE *fp;
+		int value;
+		fp = fopen(filelist[i] ,"r");
+		if(fp == NULL){
+			value = -1;
+		}
+		else{
+			if (fscanf(fp, "%d", &value) != 1) value = -1;
+			fclose(fp);
+		}
+
+		memcpy(&((uint16_t*)result)[i-reg], &value, sizeof(uint16_t));
+	}
+
+    return cnt;
+}
+
+const char* filelist_a[] = {"/var/run/unipi_stats/cycles_used",
+			"/var/run/unipi_stats/good_blocks",
+			"/var/run/unipi_stats/power_cycles",
+			"/var/run/unipi_stats/vendor_1",
+			"/var/run/unipi_stats/vendor_2",
+			"/var/run/unipi_stats/vendor_3"
+};
+
+const char* filelist_b[] = {"/var/run/unipi_lte/mode",
+				"/var/run/unipi_lte/nettype",
+				"/var/run/unipi_lte/rssi",
+				"/var/run/unipi_lte/sigqual"
+};
+
+static int read_pure_virtual_regs_legacy(uint16_t reg, uint8_t cnt, uint16_t* result)
+{
+
+    reg = reg - OFFSET_PV_REGS;
+    const char ** filelist = NULL;
+    uint8_t filelist_size = 0;
+    // STORSTAT address range [OFFSET_PV_STORSTAT_GROUP : OFFSET_PV_LTE_GROUP)
+    if (reg < OFFSET_PV_SYSSTAT_GROUP){ // Adress 4000 - 4099
+        filelist = filelist_a;
+        filelist_size = (sizeof(filelist_a) / sizeof(filelist_a[0]));
+        reg = reg - OFFSET_PV_STORSTAT_GROUP;
+    }
+    else if (reg < OFFSET_PV_LTE_GROUP){ //Address 4100 - 4199
+        return 0;
+    }
+    // LTE address range [OFFSET_PV_LTE_GROUP : OFFSET_PV_SYSSTAT_GROUP)
+    else if (reg < (OFFSET_PV_LTE_GROUP + 99)){ //Address 4200 - 4299
+        filelist = filelist_b;
+        filelist_size = (sizeof(filelist_b) / sizeof(filelist_b[0]));
+        reg = reg - OFFSET_PV_LTE_GROUP;
+    }
+    else{
+        return 0;
+    }
+
+    return prv_read_from_files(filelist, filelist_size, reg, cnt, result);
+
+}
+
+static int prv_read_file(char* path)
+{
+    vvprintf("Opening file %s \n", path);
+    FILE *fp;
+    int value;
+    fp = fopen(path ,"r");
+    if(fp == NULL)
+        return -1;
+
+    if (fscanf(fp, "%d", &value) != 1)
+        value = -2;
+    fclose(fp);
+    return value;
+}
+
+
+int read_pure_virtual_regs(uint16_t reg, uint8_t cnt, uint16_t* result)
+{
+    char path[256];
+    int val, i;
+
+    vvprintf("Reading pure virtual reg: %u cnt: %u\n", reg, cnt);
+
+    for (i=0; i< cnt; i++) {
+        snprintf(path, sizeof(path), "/run/unipi-plc/virtual-regs/%d", reg+i);
+        val = prv_read_file(path);
+        if (val >= 0) {
+            *result = val & 0xffff;
+            result++;
+        } else if (val == -1) {
+            return read_pure_virtual_regs_legacy(reg, cnt-i, result);
+            return 0;  /* Illegal register number */
+        } else {
+            return -1; /* Illegal data value */
+        }
+    }
+    return cnt;
+}
+
+int write_virtual_regs(struct kchannel* channel, uint16_t reg, uint8_t cnt, uint16_t* values)
+{
+    float fval;
+    //uint32_t swapped;
+    union {
+        uint16_t  val16[2];
+        float fval;
+    } swapped;
+    uint16_t regval;
+    Tboard_version *bv;
+    if (channel == NULL) return 0;
+    bv = channel->get_version(channel);
+    if ((HW_BOARD(bv->base_hw_version)==0)||(HW_BOARD(bv->base_hw_version)==0xd)) { //
+        if ((reg >= 3000) && (reg+cnt <= 3006)) {
+            if (! loaded) {
+                load_calibrating_const(channel);
+                if (! loaded) return -1;
+            }
+            if ((reg==3000) && (cnt >=2)) {
+                fval = *((float*)values);
+                if(verbose >= 1) printf("VIRTUAL REGS write fval=%f\n",fval);
+                regval = ao_float2reg(fval);
+                if (channel->write_regs(channel, 2, 1, &regval)!=1) return -1;
+                return cnt;
+            } else {
+                return -1;
+            }
+        } else if ((reg == 3006) && (cnt==2)) {
+            if (! loaded) {
+                load_calibrating_const(channel);
+                if (! loaded) return -1;
+            }
+            //swapped = (uint32_t)(*(values+1) | (*(values) << 16));
+            //fval = *((float*) &swapped);
+            swapped.val16[0] = values[1];
+            swapped.val16[1] = values[0];
+            vvprintf("VIRTUAL REGS write fval=%f\n",swapped.fval);
+            regval = ao_float2reg(swapped.fval);
+            if (channel->write_regs(channel, 2, 1, &regval)!=1) return -1;
+            return cnt;
+        }
+    }
+    return 0;
+}
+
+void monitor_virtual_regs(struct kchannel* channel, uint16_t reg, uint16_t* result)
+{
+    Tboard_version *bv;
+    if (channel == NULL) return;
+    bv = channel->get_version(channel);
+    if ((HW_BOARD(bv->base_hw_version)!=0)&&(HW_BOARD(bv->base_hw_version)!=0xd))
+        return;
+    // do only for Brain
+    if (reg == 1019) {
+        if (! loaded) {
+            load_calibrating_const(channel);
+            if (! loaded) return;
+        }
+        calibration.ao_sw = *result;
+        set_fp_by_mode();
+        vvprintf("VIRTUAL REGS ao mode=%d\n",calibration.ao_sw);
+    } else if (reg == 1024) {
+        if (! loaded) {
+            load_calibrating_const(channel);
+            if (! loaded) return;
+        }
+        calibration.ai_sw = *result;
+        set_fp_by_mode();
+        vvprintf("VIRTUAL REGS ai mode=%d\n",calibration.ai_sw);
+    }
+}
+
+const char unipi_w1bus_path[] = "/run/unipi-plc/by-sys/unipi-w1bus/state";
+void initialize_virtual_coils(struct kchannel* channel)
+{
+    int w1bus = open(unipi_w1bus_path, O_RDWR);
+    if (w1bus < 0) {
+        channel->has_virtual_coils = 0;
+        return;
+    }
+    close(w1bus);
+    channel->has_virtual_coils = 1;
+}
+
+void write_virtual_coils(struct kchannel* channel, uint16_t reg, uint8_t* values, uint16_t cnt, int platform)
+{
+
+    int shift = 1001 - reg;
+    int w1bus = open(unipi_w1bus_path, O_WRONLY);
+    if (w1bus < 0) {
+        return;
+    }
+    if (((values[0] >> shift) & 1)== 0) {
+        vvprintf("VIRTUAL COIL 1001 mode=on d=%02x\n", values[0]);
+        if (write(w1bus, "enabled", 7)) {}
+    } else {
+        vvprintf("VIRTUAL COIL 1001 mode=off d=%02x\n", values[0]);
+        if (write(w1bus, "disabled", 8)) {}
+    }
+    close(w1bus);
+}
+

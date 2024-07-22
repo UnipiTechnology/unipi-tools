@@ -1,0 +1,5 @@
+Makefile
+Makefile.in
+fwspi
+fwserial
+unipifwupdate.service

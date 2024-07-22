@@ -1,5 +1,0 @@
-#! /usr/bin/dh-exec
-
-unipi-modbus-tools/etc/default/*              etc/default
-debian/tmp/opt/unipi/tools/unipi_tcp_server   opt/unipi/tools/
-debian/tmp/opt/unipi/tools/r2k                opt/unipi/tools/

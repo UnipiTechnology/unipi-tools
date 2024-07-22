@@ -1,0 +1,23 @@
+[Unit]
+Description=Modbus/Tcp Server fro Unipi PLC
+Before=mervisrt.service
+Before=evok.service
+After=systemd-modules-load.service
+
+[Service]
+Type=simple
+EnvironmentFile=-@sysconfdir@/default/unipitcp
+ExecStart=@sbindir@/unipi_tcp_server -l ${LISTEN_IP} -p ${LISTEN_PORT}
+TimeoutStopSec=3
+SyslogLevel=debug
+SyslogIdentifier=unipi
+
+#WatchdogSec=30s
+#Restart=on-failure
+#StartLimitInterval=2min
+#StartLimitBurst=2
+#StartLimitAction=reboot-force
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
