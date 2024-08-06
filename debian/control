@@ -5,9 +5,9 @@ Maintainer: Miroslav Ondra <info@unipi.technology>
 Uploaders: Martin Triska <triska@unipi.technology>
 Build-Depends: debhelper-compat (= 13), libmodbus-dev, libsystemd-dev, libmhash-dev, pkg-config
 Standards-Version: 3.9.8
-Homepage: http://www.unipi.technology
-Vcs-Git: http://git.unipi.technology/UniPi/unipi-tools/unipi-tools.git
-Vcs-Browser: http://git.unipi.technology/UniPi/unipi-tools/
+Homepage: https://www.unipi.technology
+Vcs-Git: https://git.unipi.technology/UniPi/unipi-tools.git
+Vcs-Browser: https://git.unipi.technology/UniPi/unipi-tools/
 
 Package: unipi-tools-libs
 Section: libs
@@ -21,7 +21,7 @@ Architecture: any
 Depends: unipi-tools-libs, ${shlibs:Depends}, ${misc:Depends}
 Suggests: unipi-kernel-modules | unipi-kernel-modules-dkms, unipi-lte, unipi-flash-diag
 Description: Modbus server for Unipi Neuron/Axon controllers.
- Modbus daemon for UniPi Neuron controllers.
+ Modbus daemon for Unipi Neuron controllers.
 
 Package: unipi-firmware-tools
 Architecture: any
@@ -29,7 +29,7 @@ Depends: unipi-tools-libs, ${shlibs:Depends}, ${misc:Depends}
 Suggests: unipi-kernel-modules (>=1.42) | unipi-kernel-modules-dkms (>=1.42)
 Description: Firmware utilities for Unipi Neuron/Patron/Axon/Iris controllers.
  Utility for firmware update via SPI or serial Modbus. 
- Requires firmware files (packag eunipi-firmware.deb)
+ Requires firmware files (package unipi-firmware.deb)
 
 Package: unipi-tools-dev
 Section: devel

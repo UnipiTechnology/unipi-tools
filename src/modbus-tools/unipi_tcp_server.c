@@ -1,5 +1,5 @@
 /*
- * SPI communication with UniPi Neuron and Axon families of controllers
+ * SPI communication with Unipi Neuron and Axon families of controllers
  *
  * using epoll pattern
  *
@@ -442,7 +442,7 @@ int main(int argc, char *argv[])
     }
 
     server_socket = modbus_tcp_listen(nb_ctx->ctx, NB_CONNECTION);
-    printf("UniPi TCP Modbus Server: Listening Connection Established RET:%d\n", server_socket);
+    printf("Unipi TCP Modbus Server: Listening Connection Established RET:%d\n", server_socket);
     if (server_socket == -1) {
         perror ("modbus_tcp_listen");
         abort ();

@@ -601,7 +601,7 @@ void setup_gui(int argc, char **argv) {
     dialog_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     dialog = gtk_dialog_new_with_buttons("PLEASE READ - IMPORTANT INFORMATION", GTK_WINDOW(main_window), GTK_DIALOG_MODAL, "I Understand", GTK_RESPONSE_DELETE_EVENT, NULL);
     dialog_content_area = gtk_dialog_get_content_area (GTK_DIALOG (dialog));
-    dialog_label = gtk_label_new("In order to correctly flash an updated firmware to your UniPi extension device, ensure the following:\n\n\t - Have a properly configured (1 stop bit, no parity, 19200/9600 baud) serial adapter device plugged into your computer\n\t - Turn on the termination resistors (pin 1) on your UniPi extension and use a twisted-pair cable to connect it to your PC adapter\n\t - Set your UniPi Serial device to the default address (address 15)\n\n Note also the following:\n\n\t - New firmware is only loaded into the UniPi device upon restart (power cycle)\n\t - Following an unsuccessful flashing session you need to power cycle your UniPi device as well (no new firmware will be written)\n\t - This utility operates in 19200 baud mode by default, to switch to 9600 select \"9600 baud\" in the drop-down menu\n\n!!! To recover from an unfinished flashing session please power-cycle your UniPi extension !!!\n\nUNIPI TECHNOLOGIES ACCEPTS NO LIABILITY ARISING FROM INCORRECT USE OF THIS TOOL\n");
+    dialog_label = gtk_label_new("In order to correctly flash an updated firmware to your Unipi extension device, ensure the following:\n\n\t - Have a properly configured (1 stop bit, no parity, 19200/9600 baud) serial adapter device plugged into your computer\n\t - Turn on the termination resistors (pin 1) on your Unipi extension and use a twisted-pair cable to connect it to your PC adapter\n\t - Set your Unipi Serial device to the default address (address 15)\n\n Note also the following:\n\n\t - New firmware is only loaded into the Unipi device upon restart (power cycle)\n\t - Following an unsuccessful flashing session you need to power cycle your Unipi device as well (no new firmware will be written)\n\t - This utility operates in 19200 baud mode by default, to switch to 9600 select \"9600 baud\" in the drop-down menu\n\n!!! To recover from an unfinished flashing session please power-cycle your Unipi extension !!!\n\nUNIPI TECHNOLOGIES ACCEPTS NO LIABILITY ARISING FROM INCORRECT USE OF THIS TOOL\n");
 
     button_hbox = gtk_hbox_new(FALSE, 15);
     label_hbox = gtk_hbox_new(FALSE, 15);
@@ -634,7 +634,7 @@ void setup_gui(int argc, char **argv) {
     gtk_window_set_resizable(GTK_WINDOW(main_window), FALSE);
     gtk_widget_set_size_request(main_window, 400, 320);
     gtk_container_set_border_width(GTK_CONTAINER(main_window), 10);
-    gtk_window_set_title(GTK_WINDOW(main_window), "UniPi Serial Port Firmware Flasher v.1.3");
+    gtk_window_set_title(GTK_WINDOW(main_window), "Unipi Serial Port Firmware Flasher v.1.3");
 
     gtk_widget_set_margin_left(flash_button, 10);
     gtk_widget_set_margin_top(flash_button, 10);
