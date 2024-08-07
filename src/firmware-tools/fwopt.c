@@ -57,7 +57,7 @@ static struct option long_options[] = {
 void print_usage(char *argv0)
 {
 #ifdef FWSERIAL
-    printf("\nUtility for Programming UniPi devices via ModBus RTU\n");
+    printf("\nUtility for Programming Unipi devices via ModBus RTU\n");
     printf("%s [-vVPRC] -p <port> [-u <mb address>] [-b <baudrate>] [-d <firmware dir>] [-F <upper board id>]\n", argv0);
     printf("\n");
     printf("--port <port>\t\t /dev/extcomm/1/0 or COM3\n");
@@ -69,7 +69,7 @@ void print_usage(char *argv0)
     printf("--verify\t compare flash with file\n");
 #endif
 #ifdef FWSPI
-    printf("\nUtility for Programming UniPi devices via SPI\n");
+    printf("\nUtility for Programming Unipi devices via SPI\n");
     printf("%s [-v] -a [-s <spidevice> | -i <index> | -u <unit> ] [-b <baudrate>] [-d <firmware dir>]\n", argv0);
     printf("%s [-vPRC] [-s <spidevice> | -i <index> | -u <unit> ] [-b <baudrate>] [-d <firmware dir>] [-F <upper board id>]\n", argv0);
     printf("\n");
