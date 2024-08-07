@@ -1,5 +1,5 @@
 /*
- * SPI communication with UniPi Neuron and Axon families of controllers
+ * SPI communication with Unipi Neuron and Axon families of controllers
  *
  * Copyright (c) 2021  Faster CZ, ondra@faster.cz
  *
