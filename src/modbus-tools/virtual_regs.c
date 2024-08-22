@@ -44,7 +44,7 @@ typedef struct __attribute__ ((__packed__)) __attribute__ ((aligned(8))) {
 
 int loaded = 0;
 int use_calibration = 0;
-Tcalibration calibration  __attribute__((aligned (4)));
+Tcalibration calibration;//  __attribute__((aligned (4)));
 float vmul0, vmul1, vmul2, amul0, amul1;
 float voffs0, voffs1, voffs2, aoffs0, aoffs1;
 
@@ -352,8 +352,6 @@ int read_pure_virtual_regs(uint16_t reg, uint8_t cnt, uint16_t* result)
 
 int write_virtual_regs(struct kchannel* channel, uint16_t reg, uint8_t cnt, uint16_t* values)
 {
-    float fval;
-    //uint32_t swapped;
     union {
         uint16_t  val16[2];
         float fval;
@@ -369,9 +367,10 @@ int write_virtual_regs(struct kchannel* channel, uint16_t reg, uint8_t cnt, uint
                 if (! loaded) return -1;
             }
             if ((reg==3000) && (cnt >=2)) {
-                fval = *((float*)values);
-                if(verbose >= 1) printf("VIRTUAL REGS write fval=%f\n",fval);
-                regval = ao_float2reg(fval);
+                swapped.val16[0] = values[0];
+                swapped.val16[1] = values[1];
+                if(verbose >= 1) printf("VIRTUAL REGS write fval=%f\n",swapped.fval);
+                regval = ao_float2reg(swapped.fval);
                 if (channel->write_regs(channel, 2, 1, &regval)!=1) return -1;
                 return cnt;
             } else {
@@ -382,8 +381,6 @@ int write_virtual_regs(struct kchannel* channel, uint16_t reg, uint8_t cnt, uint
                 load_calibrating_const(channel);
                 if (! loaded) return -1;
             }
-            //swapped = (uint32_t)(*(values+1) | (*(values) << 16));
-            //fval = *((float*) &swapped);
             swapped.val16[0] = values[1];
             swapped.val16[1] = values[0];
             vvprintf("VIRTUAL REGS write fval=%f\n",swapped.fval);
