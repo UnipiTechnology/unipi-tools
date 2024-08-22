@@ -339,7 +339,7 @@ static uint32_t firmware_op(struct kchannel *channel, uint32_t address, uint8_t*
         char_package[5] = channel->speed & 0xff;
     }
     char_package[7] = ((uint8_t)channel->index);
-    if (lib_verbose>1) printf("FW-OP send len:%ld: addr:%02x%02x%02x%02x\t%02x %02x %02x %02x %02x %02x\n", 
+    if (lib_verbose>1) printf("FW-OP send len:%zu: addr:%02x%02x%02x%02x\t%02x %02x %02x %02x %02x %02x\n", 
                  sizeof(arm_comm_firmware), char_package[13], char_package[12], char_package[11], char_package[10],
                  char_package[14], char_package[15], char_package[16], char_package[17],
                  char_package[18], char_package[19]);
