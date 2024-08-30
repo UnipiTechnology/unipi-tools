@@ -1,13 +1,16 @@
 [Unit]
-Description=Modbus/Tcp Server fro Unipi PLC
+Description=Modbus/Tcp Server for Unipi PLC
 Before=mervisrt.service
 Before=evok.service
 After=systemd-modules-load.service
 
 [Service]
 Type=simple
+Environment="LISTEN_IP=127.0.0.1"
+Environment="LISTEN_PORT=50200"
+Environment="BROADCAST_ADDRESS=0"
 EnvironmentFile=-@sysconfdir@/default/unipitcp
-ExecStart=@sbindir@/unipi_tcp_server -l ${LISTEN_IP} -p ${LISTEN_PORT}
+ExecStart=@sbindir@/unipi_tcp_server -l ${LISTEN_IP} -p ${LISTEN_PORT} -a ${BROADCAST_ADDRESS}
 TimeoutStopSec=3
 SyslogLevel=debug
 SyslogIdentifier=unipi
