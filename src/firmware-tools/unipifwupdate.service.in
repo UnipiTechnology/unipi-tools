@@ -1,6 +1,7 @@
 [Unit]
 Description=Unipi PLC Firmware Update Service
 Before=unipitcp.service
+ConditionVirtualization=No
 
 [Service]
 Type=oneshot
