@@ -16,6 +16,7 @@ struct driver {
 	void (*reopen)(void*, struct comopt_struct*);
 	void (*close)(void*);
 	Tboard_version*(*identify)(void*);
+	uint16_t(*get_firmware_lock)(void*);
 	int  (*start)(void*);
 	int  (*run)(void*);
 	int  (*confirm)(void*);

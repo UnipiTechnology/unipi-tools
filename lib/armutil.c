@@ -148,7 +148,7 @@ static char* _firmware_name(Tboard_version* bv, const char* fwdir, const char* e
     }
     else
     {
-        char* fwname = malloc(strlen(fwdir) + strlen(ext) + 7);
+        char* fwname = malloc(strlen(fwdir) + strlen(ext) + (3+1+3+1+4+1));
         strcpy(fwname, fwdir);
         if (strlen(fwname) && (fwname[strlen(fwname)-1] != '/')) strcat(fwname, "/");
         sprintf(fwname+strlen(fwname), "%02d-%d%s%s", HW_BOARD(bv->hw_version), used_board_revision, calibrate?"C":"", ".img");
@@ -159,13 +159,17 @@ static char* _firmware_name(Tboard_version* bv, const char* fwdir, const char* e
 
 char* firmware_name(Tboard_version* bv, const char* fwdir, const char* ext)
 {
-    char * fname = _firmware_name(bv, fwdir, ext, 1);
-    FILE* fd = fopen(fname, "r");
-    if (fd != NULL) {
-        fclose(fd);
-        return fname;
+    char * fname;
+
+    if (HW_BOARD(bv->hw_version) == HW_BOARD(bv->base_hw_version)) {
+        fname = _firmware_name(bv, fwdir, ext, 1);
+        FILE* fd = fopen(fname, "r");
+        if (fd != NULL) {
+            fclose(fd);
+            return fname;
+        }
+        free(fname);
     }
-    free(fname);
     return _firmware_name(bv, fwdir, ext, 0);
 }
 
