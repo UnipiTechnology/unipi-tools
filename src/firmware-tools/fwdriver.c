@@ -58,6 +58,25 @@ Tboard_version* fwspi_identify(void* channel)
 	return NULL;
 }
 
+uint16_t fwspi_get_firmware_lock(void* channel)
+{
+    struct serial_handle *handle = channel;
+    uint16_t r519, r513;
+    struct kchannel *kchannel = channel;
+    if (!kchannel)
+        return 0;
+
+    if ((kchannel->read_regs(kchannel, 513, 1, &r513) != 1) ||
+        (r513 != 0xA53D))
+        return 0xffff;
+
+    if (kchannel->read_regs(kchannel, 519, 1, &r519) != 1) {
+        fprintf(stderr, "Identity registers reading failed\n");
+        return 0;
+    }
+    return r519;
+}
+
 int fwspi_start(void* channel)
 {
 	struct kchannel *kchannel = channel;
@@ -169,6 +188,7 @@ struct driver driver = {
 	.close	= fwspi_close,
 	.reopen	= fwspi_reopen,
 	.identify	= fwspi_identify,
+	.get_firmware_lock = fwspi_get_firmware_lock,
 	.start	= fwspi_start,
 	.run	= fwspi_run,
 	.confirm	= fwspi_confirm,
@@ -247,6 +267,21 @@ Tboard_version* fwserial_identify(void* channel)
     }
     parse_version(&handle->bv, r1000);
     return &handle->bv;
+}
+
+uint16_t fwserial_get_firmware_lock(void* channel)
+{
+    struct serial_handle *handle = channel;
+    uint16_t r519, r513;
+    if ((modbus_read_registers(handle->ctx, 513, 1, &r513) != 1) ||
+        (r513 != 0xA53D))
+        return 0xffff;
+
+    if (modbus_read_registers(handle->ctx, 519, 1, &r519) != 1) {
+        fprintf(stderr, "Identity registers reading failed: %s\n", modbus_strerror(errno));
+        return 0;
+    }
+    return r519;
 }
 
 int fwserial_start(void* channel)
@@ -355,6 +390,7 @@ struct driver driver = {
 	.close	= fwserial_close,
 	.reopen	= fwserial_reopen,
 	.identify	= fwserial_identify,
+	.get_firmware_lock = fwserial_get_firmware_lock,
 	.start	= fwserial_start,
 	.run	= fwserial_run,
 	.confirm	= fwserial_confirm,
