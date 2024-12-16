@@ -152,7 +152,10 @@ int upload_firmware(Tboard_version *bv, void* channel, int do_verify, int do_res
 		if (ret == 0)
 			ret = check_locked_firmware(header.hwversion, channel);
 	}
-	if (ret != 0) goto err;
+	if (ret != 0) {
+		eprintf("Cannot load firmware binary.\n");
+		goto err;
+	}
 
 	if (driver.start(channel) != 0) goto err;
 
