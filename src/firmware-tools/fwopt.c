@@ -140,8 +140,9 @@ int parseopt(int argc, char **argv)
            do_calibrate = 1; do_prog = 1; do_resetrw = 1;
            break;
        case 'F':
-           upboard = strtol(optarg, &endptr, 10);
-           if ((endptr==optarg) || (!upboard_exists(upboard))) {
+           upboard = strtol(optarg, &endptr, 0);
+           if ((endptr==optarg) || (*endptr != '\0') ||
+               (upboard < 16 && !upboard_exists(upboard))) {
                printf("Available upper board ids:\n");
                print_upboards(-1);
                return 1;

@@ -122,6 +122,16 @@ err:
 	return ret;
 }
 
+int check_locked_firmware(uint16_t firmware_variant, void* channel)
+{
+	uint16_t firmware_lock = driver.get_firmware_lock(channel);
+	if (firmware_lock == 0xffff)
+		return 0;
+	if (firmware_lock == firmware_variant)
+		return 0;
+	return -1;
+}
+
 int upload_firmware(Tboard_version *bv, void* channel, int do_verify, int do_resetrw)
 {
 	T_image_header header;
@@ -139,8 +149,13 @@ int upload_firmware(Tboard_version *bv, void* channel, int do_verify, int do_res
 		fwname = firmware_name(bv, firmwaredir, ".img");
 		ret = load_image(fwname, &header, prog_data, bootloader, rw_data);
 		free(fwname);
+		if (ret == 0)
+			ret = check_locked_firmware(header.hwversion, channel);
 	}
-	if (ret != 0) goto err;
+	if (ret != 0) {
+		eprintf("Cannot load firmware binary.\n");
+		goto err;
+	}
 
 	if (driver.start(channel) != 0) goto err;
 
@@ -331,7 +346,11 @@ int main(int argc, char **argv)
                 eprintf("Only calibrating version can be reprogrammed to final\n");
                 goto err;
             }
-            bv->hw_version = check_compatibility(bv->base_hw_version, upboard);
+            if (upboard < 16)
+                bv->hw_version = check_compatibility(bv->base_hw_version, upboard);
+            else
+                bv->hw_version = upboard;
+
             if (bv->hw_version == 0) {
                 eprintf("Incompatible base and upper boards. Use one of:\n");
                 print_upboards(bv->base_hw_version);
