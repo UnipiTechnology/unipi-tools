@@ -106,7 +106,7 @@ const char* get_board_name(uint16_t hw_version)
 {
     Tcompatibility_map* map = get_map(HW_BOARD(hw_version));
     if (map == NULL)
-        return "UNKNOWN BOARD";
+        return "Unipi hw";
     return map->name;
 }
 
@@ -221,6 +221,7 @@ int parse_version(Tboard_version* bv, uint16_t *r1000)
     bv->sw_version = r1000[0];
     bv->hw_version = r1000[3];
     bv->base_hw_version = r1000[4];
+    bv->bootloader_version = 0;
 
     if (SW_MAJOR(bv->sw_version) < 4) {
         bv->hw_version = (SW_MINOR(bv->sw_version) & 0xff) << 4 \
@@ -230,3 +231,15 @@ int parse_version(Tboard_version* bv, uint16_t *r1000)
     return 0;
 }
 
+int parse_bootloader_version(Tboard_version* bv, uint16_t r510)
+{
+    if (SW_MAJOR(bv->sw_version) <= 6) {
+        bv->bootloader_version = (SW_MAJOR(bv->sw_version) << 8);
+    } else {
+        if (SW_MAJOR(r510) == 0xff)
+            bv->bootloader_version = 0x600;
+        else
+            bv->bootloader_version = r510;
+    }
+    return 0;
+}
