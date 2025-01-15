@@ -146,6 +146,8 @@ static Tboard_version * get_version(struct kchannel* channel)
 	if (channel->_bv.sw_version == 0) {
 		if (read_regs(channel, 1000, 5, configregs) == 5) {
 			parse_version(&channel->_bv, configregs);
+			if (read_regs(channel, 510, 1, configregs) == 1)
+				parse_bootloader_version(&channel->_bv, configregs[0]);
 		}
 	}
 	return &channel->_bv;
@@ -213,7 +215,7 @@ struct kchannel* channel_init(const char* device, int index, uint32_t speed)
 	if (channel == NULL) return NULL;
 	channel->fd = open(device, O_RDWR);
 	if (channel->fd < 0) {
-		if (lib_verbose) printf("CHANNELINIT: Cannot open device %s\n", device);
+		if (lib_verbose>0) printf("CHANNELINIT: Cannot open device %s\n", device);
 		free(channel);
 		return NULL;
 	}

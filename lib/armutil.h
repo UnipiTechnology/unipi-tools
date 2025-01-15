@@ -49,6 +49,7 @@ typedef struct {
 #endif
 
 int parse_version(Tboard_version* bv, uint16_t *r1000);
+int parse_bootloader_version(Tboard_version* bv, uint16_t r510);
 const char* get_board_name(uint16_t hw_version);//int sw_version, int hw_version);
 char* firmware_name(Tboard_version* bv, const char* fwdir, const char* ext);
 void print_upboards(int filter);
