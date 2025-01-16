@@ -26,7 +26,7 @@ Description: Modbus server for Unipi Neuron/Axon controllers.
 Package: unipi-firmware-tools
 Architecture: any
 Depends: unipi-tools-libs, ${shlibs:Depends}, ${misc:Depends}
-Suggests: unipi-kernel-modules (>=1.42) | unipi-kernel-modules-dkms (>=1.42)
+Suggests: unipi-kernel-modules (>=2.70) | unipi-kernel-modules-dkms (>=2.70)
 Description: Firmware utilities for Unipi Neuron/Patron/Axon/Iris controllers.
  Utility for firmware update via SPI or serial Modbus. 
  Requires firmware files (package unipi-firmware.deb)
