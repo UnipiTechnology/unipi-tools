@@ -170,7 +170,7 @@ int upgrade_bootloader7(Tboard_version *bv, void* channel)
 
 	// write bootloader
 	vprintf_1("Sending %d pages.\n", n);
-	if (driver.flash(channel, pd_array, n, TRUE) != 0) goto err;
+	if (driver.flash(channel, pd_array, n, FALSE) != 0) goto err;
 
 	// reboot
 	driver.run(channel);
