@@ -20,6 +20,7 @@ typedef struct {
   uint16_t sw_version;
   uint16_t hw_version;
   uint16_t base_hw_version;
+  uint16_t bootloader_version;
 } Tboard_version;
 
 
