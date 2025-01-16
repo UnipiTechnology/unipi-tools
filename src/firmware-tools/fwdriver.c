@@ -339,7 +339,7 @@ int flashpage(modbus_t *ctx, uint8_t* prog_data, uint32_t flash_start, int do_ve
 	}
 	if (modbus_write_register(ctx, 0x7707, 1) != 1) goto err;
 
-	if (do_verify) {
+	if (do_verify && (page != 0)) {
 		pd = (uint16_t*) prog_data;
 		// set page address in the target device
 		if (modbus_write_register(ctx, 0x7705, page) != 1) goto err;
