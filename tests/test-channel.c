@@ -22,7 +22,7 @@
 #include "kchannel.h"
 
 
-int read_print(struct kchannel* fd, int r, int cnt)
+static int read_print(struct kchannel* fd, int r, int cnt)
 {
 	int i, n;
 	u_int16_t regs[40];
@@ -39,7 +39,7 @@ int read_print(struct kchannel* fd, int r, int cnt)
 	return n;
 }
 
-int bit_print(struct kchannel* fd, int r, int cnt)
+static int bit_print(struct kchannel* fd, int r, int cnt)
 {
 	int i, n;
 	u_int8_t regs[40];
@@ -57,9 +57,9 @@ int bit_print(struct kchannel* fd, int r, int cnt)
 
 int main(int argc, char** argv)
 {
-	int ret, n, i;
+	int ret, i;
 	uint16_t registers[48];
-	uint8_t bits;
+	//uint8_t bits;
 	struct kchannel *channel;
 
 	channel = channel_init("/dev/unipichannel11", 11, 12000000);
@@ -91,7 +91,7 @@ int main(int argc, char** argv)
 	read_print(channel,, 1018, 8);
 */
 
-//	bit_print(channel, 1000, 2);
+	bit_print(channel, 1000, 2);
 /*
 	bits=1;
 	ret = write_bits(channel, 1000, 3, &bits);

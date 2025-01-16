@@ -39,22 +39,32 @@ const char* program_name = "fwspi";
 
 void show_board_info(Tboard_version *bv)
 {
-    printf("Boardset:   %3d %-30s (v%d.%d%s)\n",
-               HW_BOARD(bv->hw_version),  get_board_name(bv->hw_version),
-               HW_MAJOR(bv->hw_version), HW_MINOR(bv->hw_version),
+/*    printf("Boardset:   %3d-%d %-30s %s\n",
+               HW_BOARD(bv->hw_version), HW_MAJOR(bv->hw_version),
+               get_board_name(bv->hw_version),
                IS_CALIB(bv->hw_version)?" CAL":"");
-    printf("Baseboard:  %3d %-30s (v%d.%d)\n",
-               HW_BOARD(bv->base_hw_version),  get_board_name(bv->base_hw_version),
-               HW_MAJOR(bv->base_hw_version), HW_MINOR(bv->base_hw_version));
+*/
+    printf("Baseboard: %3d-%d %s\n",
+               HW_BOARD(bv->base_hw_version), HW_MAJOR(bv->base_hw_version),
+               get_board_name(bv->base_hw_version));
 }
 
 void show_firmware_info(Tboard_version *bv)
 {
     if (SW_MINOR(bv->sw_version)!=0) {
-        printf("Firmware: v%d.%d%s (for %d-%d)\n", SW_MAJOR(bv->sw_version), SW_MINOR(bv->sw_version),
-                IS_CALIB(bv->hw_version)?" CAL":"", HW_BOARD(bv->hw_version), HW_MAJOR(bv->hw_version));
+        printf("Firmware:   %d.%d%s (for %d-%d %s)\n",
+                SW_MAJOR(bv->sw_version), SW_MINOR(bv->sw_version),
+                IS_CALIB(bv->hw_version)?" CAL":"",
+                HW_BOARD(bv->hw_version), HW_MAJOR(bv->hw_version),
+                get_board_name(bv->hw_version));
+        printf("Bootloader: %d.%d\n", SW_MAJOR(bv->bootloader_version), SW_MINOR(bv->bootloader_version));
     } else {
-        printf("WARNING! Bootloader only (v%d.0). UPDATE FIRMWARE!\n", SW_MAJOR(bv->sw_version));
+        printf("WARNING! Bootloader only mode. UPDATE FIRMWARE!\n");
+        printf("Bootloader: %d.%d%s (for %d-%d %s)\n",
+                SW_MAJOR(bv->sw_version), SW_MINOR(bv->sw_version),
+                IS_CALIB(bv->hw_version)?" CAL":"",
+                HW_BOARD(bv->hw_version), HW_MAJOR(bv->hw_version),
+                get_board_name(bv->hw_version));
     }
 }
 
@@ -92,8 +102,8 @@ int upgrade_bootloader(Tboard_version *bv, void* channel)
 	while (offset < header.bootloader_length) {
 		pd_array[n].flash_addr = header.bootloader_start+offset;
 		pd_array[n].data = bootloader + offset;
-        offset += PAGE_SIZE;
-        n++;
+		offset += PAGE_SIZE;
+		n++;
 	}
 
 	// write bootloader
@@ -118,6 +128,67 @@ err:
 	free(prog_data);
 	if (bootloader) free(bootloader);
 	if (rw_data) free(rw_data);
+	free(pd_array);
+	return ret;
+}
+
+int upgrade_bootloader7(Tboard_version *bv, void* channel)
+{
+	T_image_header header;
+	char* fwname;
+	int ret, n, offset;
+	uint8_t *prog_data = malloc(MAX_FW_SIZE);
+	uint8_t *bootloader = malloc(MAX_BL_SIZE);
+	struct page_description *pd_array = calloc(sizeof(struct page_description), MAX_PAGES);
+
+	fwname = firmware_name(bv, firmwaredir, ".img");
+	ret = load_full_image(fwname, &header, prog_data, bootloader, NULL, 1);
+	free(fwname);
+	if (ret != 0) goto err;
+
+	printf("Upgrading to bootloader 7.x...\n");
+	ret = -1;
+	if (driver.start(channel) != 0) goto err;
+
+	// prepare page description array
+	n=0;
+	offset = 0;
+	while (offset < (header.transient_length)) {
+		pd_array[n].flash_addr = offset;
+		pd_array[n].data = prog_data + offset;
+		offset += PAGE_SIZE;
+		n++;
+	}
+
+	offset = 0;
+	while (offset < header.bootloader_length) {
+		pd_array[n].flash_addr = header.transient_start+offset;
+		pd_array[n].data = bootloader + offset;
+		offset += PAGE_SIZE;
+		n++;
+	}
+
+	// write bootloader
+	vprintf_1("Sending %d pages.\n", n);
+	if (driver.flash(channel, pd_array, n, TRUE) != 0) goto err;
+
+	// reboot
+	driver.run(channel);
+	if (!verbose) printf("\n");
+	printf("Reboot board...\n");
+	usleep(500000);
+
+	if ((bv = driver.identify(channel)) == NULL)
+		goto err;
+
+	if (SW_MAJOR(bv->sw_version) < 6) {
+		eprintf("Unsuccessful upgrade: %s.\n", strerror(errno));
+		goto err;
+	}
+	ret = 0;
+err:
+	free(prog_data);
+	if (bootloader) free(bootloader);
 	free(pd_array);
 	return ret;
 }
@@ -165,8 +236,8 @@ int upload_firmware(Tboard_version *bv, void* channel, int do_verify, int do_res
 	while (offset < (header.firmware_length)) {
 		pd_array[n].flash_addr = offset;
 		pd_array[n].data = prog_data + offset;
-        offset += PAGE_SIZE;
-        n++;
+		offset += PAGE_SIZE;
+		n++;
 	}
 	if (do_resetrw) {
 		// write rw data
@@ -174,8 +245,8 @@ int upload_firmware(Tboard_version *bv, void* channel, int do_verify, int do_res
 		while (offset < header.rwdata_length) {
 			pd_array[n].flash_addr = header.rwdata_start+offset;
 			pd_array[n].data = rw_data + offset;
-	        offset += PAGE_SIZE;
-    	    n++;
+			offset += PAGE_SIZE;
+			n++;
 		}
 	}
 	vprintf_1("Sending %d pages.\n", n);
@@ -186,19 +257,18 @@ int upload_firmware(Tboard_version *bv, void* channel, int do_verify, int do_res
 	driver.run(channel);
 	usleep(200000);
 	bv->sw_version=0;
-	if ((bv = driver.identify(channel)) == NULL) {
+	if ((bv = driver.identify(channel)) == NULL)
 		vprintf_1("Cannot read identification regs\n");
-	} else {
+	else
 		show_firmware_info(bv);
-	}
 	// confirm firmware
 	if ((driver.confirm(channel)!=0) && do_resetrw) {
-	    vprintf_1("Setting default parameters\n");
-            com_options.BAUD=19200;  com_options.parity='N'; com_options.stopbit=1;
-            com_options.DEVICE_ID=15;
-	    driver.reopen(channel, &com_options);
-	    driver.confirm(channel);
-        }
+		vprintf_1("Setting default parameters\n");
+		com_options.BAUD=19200;  com_options.parity='N'; com_options.stopbit=1;
+		com_options.DEVICE_ID=15;
+		driver.reopen(channel, &com_options);
+		driver.confirm(channel);
+	}
 	driver.confirm(channel);
 	// reboot
 	driver.reboot(channel);
@@ -269,6 +339,8 @@ int auto_update(void)
 				if ((bv->sw_version < image_version) && (SW_MAJOR(image_version) == SW_MAJOR(bv->sw_version))) {
 					printf("Upgrading firmware %d.%d (old was %d.%d) in device id=%d...\n", SW_MAJOR(image_version), SW_MINOR(image_version),\
 							SW_MAJOR(bv->sw_version), SW_MINOR(bv->sw_version), device_index);
+					if (SW_MAJOR(bv->bootloader_version) == 6)
+						upgrade_bootloader7(bv, channel);
 					upload_firmware(bv, channel, 0, 0);
 				}
 			}
@@ -303,8 +375,8 @@ int main(int argc, char **argv)
     // get FW & HW version
     if ((bv = driver.identify(channel)) == NULL) goto err;
 
-    show_board_info(bv);
     show_firmware_info(bv);
+    show_board_info(bv);
 
     header=load_image_header(bv);
     if (header && (SW_MAJOR(bv->sw_version) < 6)) {
@@ -358,6 +430,8 @@ int main(int argc, char **argv)
             }
             do_resetrw = 1;
         }
+        if (SW_MAJOR(bv->bootloader_version) == 6)
+            upgrade_bootloader7(bv, channel);
         upload_firmware(bv, channel, do_verify, do_resetrw);
     }
     driver.close(channel);

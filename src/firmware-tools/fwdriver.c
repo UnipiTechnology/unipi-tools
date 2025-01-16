@@ -266,6 +266,9 @@ Tboard_version* fwserial_identify(void* channel)
         return NULL;
     }
     parse_version(&handle->bv, r1000);
+    if (modbus_read_registers(handle->ctx, 510, 1, r1000) != 1) {
+        parse_bootloader_version(&handle->bv, r1000[0]);
+    }
     return &handle->bv;
 }
 
