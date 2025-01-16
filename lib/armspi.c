@@ -306,6 +306,8 @@ static Tboard_version * get_version(struct kchannel* channel)
 	if (channel->_bv.sw_version == 0) {
 		if (read_regs(channel, 1000, 5, configregs) == 5) {
 			parse_version(&channel->_bv, configregs);
+			if (read_regs(channel, 510, 1, configregs) == 1)
+				parse_bootloader_version(&channel->_bv, configregs[0]);
 		}
 	}
 	return &channel->_bv;
