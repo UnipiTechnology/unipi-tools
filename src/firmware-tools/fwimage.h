@@ -16,6 +16,7 @@ typedef struct __attribute__((__packed__)) {
     uint32_t bl_uart_parity;
     uint32_t transient_length;
     uint32_t transient_start;
+    uint32_t platform;    
 } T_image_header;
 
 #define IMAGE_HEADER_LENGTH 256
