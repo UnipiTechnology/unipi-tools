@@ -256,7 +256,8 @@ int upload_firmware(Tboard_version *bv, void* channel, int do_verify, int do_res
 	// try to run new firmware
 	driver.run(channel);
 	usleep(200000);
-	bv->sw_version=0;
+	if (bv != NULL)
+		bv->sw_version=0;
 	if ((bv = driver.identify(channel)) == NULL)
 		vprintf_1("Cannot read identification regs\n");
 	else
@@ -273,7 +274,8 @@ int upload_firmware(Tboard_version *bv, void* channel, int do_verify, int do_res
 	// reboot
 	driver.reboot(channel);
 	usleep(200000);
-	bv->sw_version=0;
+	if (bv != NULL)
+		bv->sw_version=0;
 	if ((bv = driver.identify(channel)) == NULL) {
 		if ((bv = driver.identify(channel)) == NULL) {
 			ret = -1;
