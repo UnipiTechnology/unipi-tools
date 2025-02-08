@@ -40,7 +40,7 @@
 #include <fcntl.h>
 #include <sys/epoll.h>
 
-#ifndef UNUSE_SYSTEMD
+#ifdef HAVE_SYSTEMD_SD_DAEMON_H
 #include <systemd/sd-daemon.h>
 #endif
 
@@ -349,7 +349,7 @@ int main(int argc, char *argv[])
     struct kchannel *channel;
     int poll_timeout = -1;
     int wdtimesec = -1;
-#ifndef UNUSE_SYSTEMD
+#ifdef HAVE_SYSTEMD_SD_DAEMON_H
     unsigned long lasttimesec = time(NULL);
 #endif
     char* wdenv = getenv("WATCHDOG_USEC");
@@ -499,7 +499,7 @@ int main(int argc, char *argv[])
     if (verbose) printf("Starting primary loop\n");
     /* The event loop */
     while (1) {
-#ifndef UNUSE_SYSTEMD
+#ifdef HAVE_SYSTEMD_SD_DAEMON_H
         if (wdtimesec > 0) {
             unsigned long ntime = time(NULL);
             if ((ntime - lasttimesec) >= (unsigned long) wdtimesec) {

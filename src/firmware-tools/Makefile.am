@@ -5,7 +5,7 @@ AM_CPPFLAGS = \
     -DSYSCONFDIR=\""$(sysconfdir)"\" \
     -DLIBEXECDIR=\""$(libexecdir)"\" \
     -I${top_srcdir}/src/firmware-tools \
-    -I${top_builddir}/lib
+    -I${top_srcdir}/lib
 
 AM_CFLAGS = ${my_CFLAGS}
 
