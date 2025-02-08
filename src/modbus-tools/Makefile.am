@@ -4,7 +4,7 @@ AM_CPPFLAGS = \
     -DSYSCONFDIR=\""$(sysconfdir)"\" \
     -DLIBEXECDIR=\""$(libexecdir)"\" \
     -I${top_srcdir}/src/modbus-tools \
-    -I${top_builddir}/lib
+    -I${top_srcdir}/lib
 
 AM_CFLAGS = ${my_CFLAGS}
 
@@ -20,7 +20,7 @@ unipi_tcp_server_SOURCES = \
     virtual_regs.c \
     virtual_regs.h
 
-unipi_tcp_server_LDADD = -lmodbus -lsystemd -lm $(common_ldflags)
+unipi_tcp_server_LDADD = -lmodbus -lm $(common_ldflags)
 
 r2k_SOURCES = r2k.c
 
@@ -32,6 +32,7 @@ SERVICE_SUBS = \
 
 
 if HAVE_SYSTEMD
+unipi_tcp_server_LDADD += -lsystemd
 systemdsystemunit_DATA = unipitcp.service
 etcdefaultdir=$(sysconfdir)/default
 etcdefault_DATA = .default/unipitcp
