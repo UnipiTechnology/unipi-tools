@@ -10,7 +10,7 @@ Environment="LISTEN_IP=127.0.0.1"
 Environment="LISTEN_PORT=50200"
 Environment="BROADCAST_ADDRESS=0"
 EnvironmentFile=-@sysconfdir@/default/unipitcp
-ExecStart=@sbindir@/unipi_tcp_server -l ${LISTEN_IP} -p ${LISTEN_PORT} -a ${BROADCAST_ADDRESS}
+ExecStart=@sbindir@/unipitcp -l ${LISTEN_IP} -p ${LISTEN_PORT} -a ${BROADCAST_ADDRESS}
 TimeoutStopSec=3
 SyslogLevel=debug
 SyslogIdentifier=unipi

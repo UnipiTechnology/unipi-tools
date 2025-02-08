@@ -31,7 +31,7 @@
 #define xMODBUS_MAX_READ_REGISTERS 19
 #define xMODBUS_MAX_RW_WRITE_REGISTERS 1
 
-uint32_t gettime_ms(void)
+static uint32_t gettime_ms(void)
 {
     struct timeval tv;
     gettimeofday (&tv, NULL);
