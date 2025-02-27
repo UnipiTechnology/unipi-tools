@@ -29,27 +29,26 @@ int do_downgrade = 0;
 static struct option long_options[] = {
 
   {"auto", no_argument,    		0, 'a'},
-  {"verbose", no_argument,      0, 'v'},
-  {"programm", no_argument,     0, 'P'},
-  {"upgrade", no_argument,      0, 'U'},
-  {"downgrade", no_argument,    0, 'D'},
-  {"resetrw", no_argument,      0, 'R'},
-  {"calibrate", no_argument,    0, 'C'},
-  {"final", required_argument,  0, 'F'},
-  {"verify", no_argument,       0, 'V'},
-  {"dir", required_argument,    0, 'd'},
   {"baud",  required_argument,  0, 'b'},
+  {"calibrate", no_argument,    0, 'C'},
+  {"downgrade", no_argument,    0, 'D'},
+  {"dir", required_argument,    0, 'd'},
+  {"final", required_argument,  0, 'F'},
+  {"programm", no_argument,     0, 'P'},
+  {"resetrw", no_argument,      0, 'R'},
+  {"upgrade", no_argument,      0, 'U'},
+  {"unit", required_argument,	0, 'u'},
+  {"verify", no_argument,       0, 'V'},
+  {"verbose", no_argument,      0, 'v'},
 #ifdef FWSERIAL
+  {"stopbits",required_argument,0, 'o'},
   {"port",  required_argument,  0, 'p'},
   {"parity",required_argument,  0, 'r'},
-  {"stopbits",required_argument,0, 'o'},
   {"timeout",required_argument, 0, 't'},
-  {"unit",    required_argument,0, 'u'},
 #endif
 #ifdef FWSPI
-  {"spidev",  no_argument,      0, 's'},
   {"index", required_argument,	0, 'i'},
-  {"unit", required_argument,	0, 'u'},
+  {"spidev",  no_argument,      0, 's'},
 #endif
   {0, 0, 0, 0}
 };
