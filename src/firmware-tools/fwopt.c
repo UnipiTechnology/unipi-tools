@@ -29,27 +29,26 @@ int do_downgrade = 0;
 static struct option long_options[] = {
 
   {"auto", no_argument,    		0, 'a'},
-  {"verbose", no_argument,      0, 'v'},
-  {"programm", no_argument,     0, 'P'},
-  {"upgrade", no_argument,      0, 'U'},
-  {"downgrade", no_argument,    0, 'D'},
-  {"resetrw", no_argument,      0, 'R'},
-  {"calibrate", no_argument,    0, 'C'},
-  {"final", required_argument,  0, 'F'},
-  {"verify", no_argument,       0, 'V'},
-  {"dir", required_argument,    0, 'd'},
   {"baud",  required_argument,  0, 'b'},
+  {"calibrate", no_argument,    0, 'C'},
+  {"downgrade", no_argument,    0, 'D'},
+  {"dir", required_argument,    0, 'd'},
+  {"final", required_argument,  0, 'F'},
+  {"programm", no_argument,     0, 'P'},
+  {"resetrw", no_argument,      0, 'R'},
+  {"upgrade", no_argument,      0, 'U'},
+  {"unit", required_argument,	0, 'u'},
+  {"verify", no_argument,       0, 'V'},
+  {"verbose", no_argument,      0, 'v'},
 #ifdef FWSERIAL
+  {"stopbits",required_argument,0, 'o'},
   {"port",  required_argument,  0, 'p'},
   {"parity",required_argument,  0, 'r'},
-  {"stopbits",required_argument,0, 'o'},
   {"timeout",required_argument, 0, 't'},
-  {"unit",    required_argument,0, 'u'},
 #endif
 #ifdef FWSPI
-  {"spidev",  no_argument,      0, 's'},
   {"index", required_argument,	0, 'i'},
-  {"unit", required_argument,	0, 'u'},
+  {"spidev",  no_argument,      0, 's'},
 #endif
   {0, 0, 0, 0}
 };
@@ -57,35 +56,37 @@ static struct option long_options[] = {
 void print_usage(char *argv0)
 {
 #ifdef FWSERIAL
-    printf("\nUtility for Programming Unipi devices via ModBus RTU\n");
-    printf("%s [-vVPRC] -p <port> [-u <mb address>] [-b <baudrate>] [-d <firmware dir>] [-F <upper board id>]\n", argv0);
+    printf("\nFirmware programming utility for Unipi devices via Modbus RTU\n");
+    printf("Usage: %s [-PRV] -p <port> [-u <unit-id>] [-b <baudrate>] [-v]\n", argv0);
     printf("\n");
-    printf("--port <port>\t\t /dev/extcomm/1/0 or COM3\n");
-    printf("--unit <mb address>\t default 15\n");
-    printf("--baud <baudrate>\t default 19200\n");
-    printf("--parity N|E|O\t default N\n");
-    printf("--stopbis 1|2\t default 1\n");
-    printf("--timeout in ms\t default 800\n");
-    printf("--verify\t compare flash with file\n");
+    printf("Bus options:\n");
+    printf("  -b, --baud <bps>\t baudrate, default 19200\n");
+    printf("  -p, --port <path>\t serial line (e.g. /run/unipi-plc/by-sys/rs485-1/tty or COM3)\n");
+    printf("  -o, --stopbits <n>\t stop bits (1|2), default 1\n");
+    printf("  -r, --parity <type>\t parity (N|E|O), default N\n");
+    printf("  -t, --timeout <ms>\t request timeout, default 800\n");
+    printf("  -u, --unit <ID>\t device Modbus Unit ID (1...254)\n");
+    printf("  -V, --verify\t\t compare flash with file\n");
 #endif
 #ifdef FWSPI
-    printf("\nUtility for Programming Unipi devices via SPI\n");
-    printf("%s [-v] -a [-s <spidevice> | -i <index> | -u <unit> ] [-b <baudrate>] [-d <firmware dir>]\n", argv0);
-    printf("%s [-vPRC] [-s <spidevice> | -i <index> | -u <unit> ] [-b <baudrate>] [-d <firmware dir>] [-F <upper board id>]\n", argv0);
+    printf("\nFirmware programming utility for Unipi devices via SPI\n");
+    printf("Usage: %s [-a | -PRU] [-u <unit-id>] [-v]\n", argv0);
     printf("\n");
-    printf("--index <index>\t\t [0...n] device index (for unipi-kernel-modules < 2.0)\n");
-    printf("--unit  <unit>\t\t [1...254] device Modbus Unit ID (for unipi-kernel-modules >= 2.0)\n");
-    printf("--spidev <spidev>\t\t /dev/unipispi \n");
-    printf("--baud <baudrate>\t default 10000000\n");
+    printf("Bus options:\n");
+    printf("  -b, --baud <bps>\t baudrate, default 10000000\n");
+    printf("  -u, --unit <ID>\t device Modbus Unit ID (1...254)\n");
 #endif
-    printf("--dir <firmware dir>\t default /opt/unipi/firmware\n");
-    printf("--verbose\t show more messages\n");
-    printf("--programm\t write firmware to flash\n");
-    printf("--upgrade\t upgrade firmware from 5.x to 6.x\n");
-    printf("--resetrw\t check/rewrite also rw settings\n");
-    printf("--calibrate\t write calibrating firmware to flash\n");
-    printf("--final <upper board id or ?>\t write final firmware over calibrating\n");
-    printf("--auto \t\t autoupdate firmware\n");
+    printf("\n");
+    printf("General options:\n");
+    printf("  -a, --auto \t\t automatic update of all boards\n");
+    printf("  -d, --dir <path>\t firmware directory, default /opt/unipi/firmware\n");
+    printf("  -P, --programm\t write firmware to flash\n");
+    printf("  -R, --resetrw\t\t reset user settings to default, must be used with [-P|-U]\n");
+    printf("  -U, --upgrade\t\t upgrade firmware (from 5.x or below to 6.x or newer)\n");
+    printf("  -v, --verbose\t\t show more messages\n");
+    printf("\n");
+    printf("See our KB for more information:\n");
+    printf("https://kb.unipi.technology/en:sw:04-unipi-firmware\n");
     printf("\n");
 }
 
@@ -165,7 +166,8 @@ int parseopt(int argc, char **argv)
            unit = 0;
            break;
        case 'i':
-           com_options.DEVICE_ID = atoi(optarg);
+           eprintf("Unsupported option, use -u instead.");
+           return 1;
            break;
        case 'u':
            unit = atoi(optarg);
