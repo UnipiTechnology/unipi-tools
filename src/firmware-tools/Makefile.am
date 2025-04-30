@@ -15,12 +15,12 @@ common_ldflags = \
 bin_PROGRAMS = fwserial fwspi
 
 fwserial_SOURCES = \
-    fw.c fwimage.c fwconfig.c fwopt.c fwdriver.c fwbin.c
+    fw.c fwimage.c fwconfig.c fwopt.c fwdriverserial.c fwbin.c
 fwserial_CFLAGS = -DFWSERIAL
 fwserial_LDADD = -lmodbus $(common_ldflags)
 
 fwspi_SOURCES = \
-    fw.c fwimage.c fwconfig.c fwopt.c fwdriver.c fwbin.c
+    fw.c fwimage.c fwconfig.c fwopt.c fwdriverspi.c fwbin.c
 fwspi_CFLAGS = -DFWSPI
 fwspi_LDADD = -lmodbus $(common_ldflags)
 
