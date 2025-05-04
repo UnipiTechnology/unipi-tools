@@ -2,6 +2,6 @@
 
 opt/unipi/tools/fwspi
 opt/unipi/tools/fwserial
-lib/systemd/system/unipifwupdate.service
+usr/lib/systemd/system/unipifwupdate.service
 # usr/share/doc/unipi-firmware-tools/
 usr/share/doc/unipi-tools/* usr/share/doc/unipi-firmware-tools/

@@ -35,7 +35,7 @@ Package: unipi-tools-dev
 Section: devel
 Priority: optional
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${misc:Depends}
 Description: Static Libraries and Headers for Unipi SPI interface
  Static libraries and headers for Unipi controllers.
 

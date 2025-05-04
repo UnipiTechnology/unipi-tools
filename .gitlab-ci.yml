@@ -1,6 +1,7 @@
 include: 
-    project: docker/template
-    file: debian-pkg-ng.yaml
+    - project: docker/template
+      file: debian-pkg-ng.yaml
+      ref: trixie
 
 variables:
     build_for_architecture: "armhf arm64 amd64"
