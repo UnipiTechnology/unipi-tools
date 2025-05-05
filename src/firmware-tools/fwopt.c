@@ -70,6 +70,10 @@ static struct option long_options[] = {
   {"index", required_argument,	0, 'i'},
   {"spidev",  no_argument,      0, 's'},
 #endif
+#ifdef FWI2C
+  {"index", required_argument,	0, 'i'},
+  {"port",  required_argument,  0, 'p'},
+#endif
   {0, 0, 0, 0}
 };
 
@@ -96,6 +100,14 @@ void print_usage(char *argv0)
     printf("  -b, --baud <bps>\t baudrate, default 10000000\n");
     printf("  -u, --unit <ID>\t device Modbus Unit ID (1...254)\n");
 #endif
+#ifdef FWI2C
+    printf("\nFirmware programming utility for Unipi devices via I2C\n");
+    printf("Usage: %s [-a | -P] [-p <port>] [-u <id>] [-v]\n", argv0);
+    printf("\n");
+    printf("Bus options:\n");
+    printf("  -p, --port <path>\t i2c bus (e.g. /dev/i2c-1 or /dev/i2c/1)\n");
+    printf("  -u, --unit <ID>\t i2c device address (1...254)\n");
+#endif
     printf("\n");
     printf("General options:\n");
     printf("  -a, --auto \t\t automatic update of all boards\n");
@@ -116,14 +128,18 @@ char* shortopt = "vVPRUDCp:b:u:d:F:t:o:";
 #ifdef FWSPI
 char* shortopt = "avPRUCs:b:d:F:i:u:";
 #endif
+#ifdef FWI2C
+char* shortopt = "avPs:d:F:i:u:p:";
+#endif
 
 int parseopt(int argc, char **argv)
 {
     // Parse command line options
     int c;
     int unit = -1;
-#ifdef FWSPI
+#if defined(FWSPI) || defined(FWI2C)
     char buf[256];
+    buf[255] = 0;
 #endif
     char *endptr;
     while (1) {
@@ -233,6 +249,40 @@ int parseopt(int argc, char **argv)
                eprintf("Timeout must be greater than zero integer (given %s)\n", optarg);
                return 1;
            }
+           break;
+#endif
+#ifdef FWI2C
+       case 'p':
+           com_options.PORT = strdup(optarg);
+           unit = 0;
+           break;
+       case 'u': {
+             char *end;
+	           com_options.DEVICE_ID = strtoul(optarg, &end, 0);
+             if (*end || !*optarg || (com_options.DEVICE_ID <= 0) || (com_options.DEVICE_ID > 0xFF)) {
+                 eprintf("Unit address must be integer or hex (0xXX) in range 1 ... 255 (given %s)\n", optarg);
+                 return 1;
+             }
+             break;
+           }
+       case 'i':
+           unit = atoi(optarg);
+           if (unit<=0) {
+               eprintf("Interface must be positive integer (given %s)\n", optarg);
+               return 1;
+           }
+           snprintf(buf, 255, "/dev/i2c/%d", unit);
+
+           // Check, if not found, probably another syntax
+           if (access(buf, F_OK))
+             snprintf(buf, 255, "/dev/i2c-%d", unit);
+
+           if (access(optarg, F_OK)) {
+             eprintf("Specified I2C bus interface /dev/i2c-%s or symlink /dev/i2c/%s not found\n", optarg, optarg);
+             return 1;
+           }
+
+           com_options.PORT = strdup(buf);
            break;
 #endif
        default:

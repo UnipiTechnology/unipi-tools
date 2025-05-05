@@ -3,7 +3,7 @@ Section: unknown
 Priority: optional
 Maintainer: Miroslav Ondra <info@unipi.technology>
 Uploaders: Martin Triska <triska@unipi.technology>
-Build-Depends: debhelper-compat (= 13), libmodbus-dev, libsystemd-dev, libmhash-dev, pkg-config
+Build-Depends: debhelper-compat (= 13), libmodbus-dev, libsystemd-dev, libmhash-dev, libi2c-dev, pkg-config
 Standards-Version: 3.9.8
 Homepage: https://www.unipi.technology
 Vcs-Git: https://git.unipi.technology/UniPi/unipi-tools.git
