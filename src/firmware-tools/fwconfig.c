@@ -41,6 +41,10 @@ struct comopt_struct com_options = {
 	.timeout_ms = 800,
     .stopbit = 1,
 #endif
+#ifdef FWI2C
+  .PORT = "/dev/i2c-1",
+  .DEVICE_ID = 0x1F,
+#endif
 };
 
 #ifdef OS_WIN32

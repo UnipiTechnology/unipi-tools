@@ -1,5 +1,6 @@
 #! /usr/bin/dh-exec
 
+opt/unipi/tools/fwi2c
 opt/unipi/tools/fwspi
 opt/unipi/tools/fwserial
 usr/lib/systemd/system/unipifwupdate.service

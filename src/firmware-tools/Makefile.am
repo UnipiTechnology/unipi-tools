@@ -12,7 +12,7 @@ AM_CFLAGS = ${my_CFLAGS}
 common_ldflags = \
 	$(top_builddir)/lib/libunipichannel.la
 
-bin_PROGRAMS = fwserial fwspi
+bin_PROGRAMS = fwserial fwspi fwi2c
 
 fwserial_SOURCES = \
     fw.c fwimage.c fwconfig.c fwopt.c fwdriverserial.c fwbin.c
@@ -23,6 +23,11 @@ fwspi_SOURCES = \
     fw.c fwimage.c fwconfig.c fwopt.c fwdriverspi.c fwbin.c
 fwspi_CFLAGS = -DFWSPI
 fwspi_LDADD = -lmodbus $(common_ldflags)
+
+fwi2c_SOURCES = \
+    fw.c fwimage.c fwconfig.c fwopt.c fwdriveri2c.c fwbin.c
+fwi2c_CFLAGS = -DFWI2C
+fwi2c_LDADD = -li2c $(common_ldflags)
 
 DISTCLEANFILES =
 EXTRA_DIST += 
