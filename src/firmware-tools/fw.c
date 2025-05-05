@@ -47,6 +47,9 @@ const char* program_name = "fwserial";
 #ifdef FWSPI
 const char* program_name = "fwspi";
 #endif
+#ifdef FWI2C
+const char* program_name = "fwi2c";
+#endif
 
 #define MAX_PAGES 64
 
