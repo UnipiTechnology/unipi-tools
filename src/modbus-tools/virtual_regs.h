@@ -48,4 +48,5 @@ void write_virtual_coils(struct kchannel* channel, uint16_t reg, uint8_t* values
 int read_pure_virtual_regs(uint16_t reg, uint8_t cnt, uint16_t* result);
 
 
+
 #endif
