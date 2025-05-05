@@ -45,6 +45,7 @@ int do_upgrade = 0;
 int do_downgrade = 0;
 
 #define CL_HELP     500
+#define CL_VERSION  501
 
 static struct option long_options[] = {
 
@@ -61,6 +62,7 @@ static struct option long_options[] = {
   {"unit", required_argument,	0, 'u'},
   {"verify", no_argument,       0, 'V'},
   {"verbose", no_argument,      0, 'v'},
+  {"version", no_argument,      0, CL_VERSION},
 #ifdef FWSERIAL
   {"stopbits",required_argument,0, 'o'},
   {"port",  required_argument,  0, 'p'},
@@ -117,6 +119,7 @@ void print_usage(char *argv0)
     printf("  -R, --resetrw\t\t reset user settings to default, must be used with [-P|-U]\n");
     printf("  -U, --upgrade\t\t upgrade firmware (from 5.x or below to 6.x or newer)\n");
     printf("  -v, --verbose\t\t show more messages\n");
+    printf("      --version\t\t show version information\n");
     printf("      --help\t\t show this page\n");
     printf("\n");
     printf("See our KB for more information:\n");
@@ -133,6 +136,8 @@ char* shortopt = "avPRUCs:b:d:F:i:u:";
 #ifdef FWI2C
 char* shortopt = "avPs:d:F:i:u:p:";
 #endif
+
+extern const char* program_name;  // defined in fw.c
 
 int parseopt(int argc, char **argv)
 {
@@ -289,6 +294,14 @@ int parseopt(int argc, char **argv)
 #endif
        case CL_HELP:
            print_usage(argv[0]);
+           exit(0);
+           break;
+
+       case CL_VERSION:
+           printf("%s %s\n", program_name, VERSION);
+           printf("Copyright (C) 2016 Unipi technology s.r.o.\n");
+           printf("This is free software; see the source for copying conditions.  There is NO\n");
+           printf("warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n");
            exit(0);
            break;
 
