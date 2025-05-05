@@ -460,4 +460,3 @@ void write_virtual_coils(struct kchannel* channel, uint16_t reg, uint8_t* values
     }
     close(w1bus);
 }
-

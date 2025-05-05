@@ -18,7 +18,9 @@ unipitcp_SOURCES = \
     nb_modbus.c \
     nb_modbus.h \
     virtual_regs.c \
-    virtual_regs.h
+    virtual_regs.h \
+    virtual_leds.c \
+    virtual_leds.h
 
 unipitcp_LDADD = -lmodbus -lm $(common_ldflags)
 
