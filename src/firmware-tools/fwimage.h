@@ -59,8 +59,8 @@ uint16_t get_bin_version(Tboard_version* bv);
 
 extern int verbose;
 
-#define vvprintf(format, args...) if(verbose >= 1) printf(format, ##args)
-#define vprintf_1(format, args...) if(verbose >= 1) printf(format, ##args)
-#define vprintf_2(format, args...) if(verbose >= 2) printf(format, ##args)
+#define vvprintf(format, args...)  do { if(verbose >= 1) printf(format, ##args);} while (0)
+#define vprintf_1(format, args...) do { if(verbose >= 1) printf(format, ##args);} while (0)
+#define vprintf_2(format, args...) do { if(verbose >= 2) printf(format, ##args);} while (0)
 #define eprintf(format, args...) fprintf(stderr, format, ##args)
 #endif
