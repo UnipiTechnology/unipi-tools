@@ -25,11 +25,8 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
-
+#include "debug_print.h"
 #include "virtual_leds.h"
-
-extern int verbose;
-#define vvprintf( ... ) if (verbose > 1) printf( __VA_ARGS__ )
 
 // configurable options from buildsystem
 #ifndef VIRTUALLED_NAME
