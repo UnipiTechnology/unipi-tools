@@ -49,6 +49,7 @@
 #include "config.h"
 #include "nb_modbus.h"
 #include "virtual_regs.h"
+#include "virtual_leds.h"
 
 const char* version_string = PACKAGE_VERSION;
 
@@ -442,6 +443,7 @@ int main(int argc, char *argv[])
     if (channel) {
         initialize_virtual_coils(channel);
     }
+    virtual_leds_init();
 
     server_socket = modbus_tcp_listen(nb_ctx->ctx, NB_CONNECTION);
     printf("Unipi TCP Modbus Server: Listening Connection Established RET:%d\n", server_socket);

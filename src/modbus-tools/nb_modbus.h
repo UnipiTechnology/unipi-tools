@@ -29,6 +29,8 @@
 
 #include <kchannel.h>
 
+#include "debug_print.h"
+
 #define MAX_ARMS 5
 // from modbus_private_h
 #define _REPORT_MB_SLAVE_ID 181
@@ -68,7 +70,6 @@ typedef struct {
 
 extern int deferred_op;
 //extern arm_handle*  deferred_arm;
-extern int verbose;
 
 nb_modbus_t*  nb_modbus_new_tcp(const char *ip_address, int port);
 void nb_modbus_free(nb_modbus_t*  nb_ctx);
@@ -76,14 +77,5 @@ int nb_modbus_reqlen(uint8_t* data, uint8_t size);
 int nb_modbus_reply(nb_modbus_t *nb_ctx, uint8_t *req, int req_length, int broadcast_address);
 struct kchannel* add_channel(nb_modbus_t*  nb_ctx, uint8_t index, const char *device, int speed);
 struct kchannel* get_channel(nb_modbus_t*  nb_ctx, uint8_t index);
-
-#define vprintf( ... ) if (verbose > 0) printf( __VA_ARGS__ )
-#define vvprintf( ... ) if (verbose > 1) printf( __VA_ARGS__ )
-
-#define vprintf_1(f, args...)	if (verbose>=1) printf(f, ##args)
-#define vprintf_2(f, args...)	if (verbose>=2) printf(f, ##args)
-#define eprintf(f, args...)	fprintf(stderr, f, ##args)
-
-extern int verbose;
 
 #endif

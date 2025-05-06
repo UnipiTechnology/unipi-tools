@@ -39,6 +39,7 @@
 
 #include "nb_modbus.h"
 #include "virtual_regs.h"
+#include "virtual_leds.h"
 
 #include "kchannel.h"
 #include "armutil.h"
@@ -226,6 +227,15 @@ int nb_modbus_reply(nb_modbus_t *nb_ctx, uint8_t *req, int req_length, int broad
             rsp_length = nb_response_exception(
                 nb_ctx->ctx, MODBUS_EXCEPTION_ILLEGAL_DATA_ADDRESS, rsp,
                 "Illegal data address 0x%0X in write_coil\n", address);
+        } else if(virtual_leds_touched(address, 1)) {
+            uint8_t value = data ? 1 : 0;
+            if (virtual_leds_write(address, 1, &value)) {
+              rsp_length = nb_response_exception(
+                  nb_ctx->ctx, MODBUS_EXCEPTION_ILLEGAL_DATA_ADDRESS, rsp,
+                  "Illegal data address 0x%0X in write_coil\n", address);
+            } else {
+              rsp_length += 4;
+            }
         } else {
             n =  (channel==NULL) ? -1 : channel->write_bit(channel, address, data ? 1 : 0, 0);
             if (channel && channel->has_virtual_coils && (address == 1001)) {
@@ -281,6 +291,17 @@ int nb_modbus_reply(nb_modbus_t *nb_ctx, uint8_t *req, int req_length, int broad
             rsp_length = nb_response_exception(
                 nb_ctx->ctx, MODBUS_EXCEPTION_ILLEGAL_DATA_ADDRESS, rsp,
                 "Illegal data address 0x%0X in write_coils\n", address);
+        } else if (virtual_leds_touched(address, nb)) {
+
+          if (virtual_leds_write(address, nb, rsp+rsp_length + 5)) {
+              rsp_length = nb_response_exception(
+                  nb_ctx->ctx, MODBUS_EXCEPTION_ILLEGAL_DATA_ADDRESS, rsp,
+                  "Illegal data address 0x%0X in write_coils\n", address);
+              break;
+          } else {
+            rsp_length += 4; // TODO co tady jaky response ma byt ?
+          }
+
         } else {
             /* 6 = byte count */
             n = (channel==NULL) ? -1 : channel->write_bits(channel, address, nb, rsp+rsp_length + 5);
