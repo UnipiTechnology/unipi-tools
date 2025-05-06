@@ -1,7 +1,7 @@
 /*
- * Bus protocol driver
+ * Utility for loading and storing binary files
  *
- * Copyright (c) 2016  Faster CZ, ondra@faster.cz
+ * Copyright (c) 2025  Frantisek Burian frantisek.burian@unipi.technology
  *
  * SPDX-License-Identifier: GPL-2.0+
  *
@@ -19,34 +19,28 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-#ifndef __FWDRIVER_H
-#define __FWDRIVER_H
+#ifndef __FIRMWARE_TOOLS_BINARY_DATA_H
+#define __FIRMWARE_TOOLS_BINARY_DATA_H
 
-#include "armutil.h"
-#include "fwconfig.h"
-#include "binary_data.h"
+#include <stdint.h>
 
-struct page_description {
-	uint32_t flash_addr;
-	uint8_t* data;
-	int errors;
+struct binary_data {
+  uint8_t *pointer;
+  ssize_t length;
 };
 
+// allocate buffers
+int binary_data_alloc(struct binary_data *bd, ssize_t size);
+// free buffers
+void binary_data_free(struct binary_data *bd);
 
-struct driver {
-	void* (*open)(struct comopt_struct*);
-	void (*reopen)(void*, struct comopt_struct*);
-	void (*close)(void*);
-	Tboard_version*(*identify)(void*);
-	uint16_t(*get_firmware_lock)(void*);
-	int  (*start)(void*);
-	int  (*run)(void*);
-	int  (*confirm)(void*);
-	int  (*reboot)(void*);
-	int  (*flash)(void*, struct page_description *, int, int);
-  int  (*configure)(void*, struct binary_data *write, struct binary_data *read);
-};
+// read entire file as buffer
+int binary_data_read(struct binary_data *bd, const char *datafile);
+// write entire buffer into file
+int binary_data_write(struct binary_data *bd, const char *datafile);
 
-extern struct driver driver;
+// compare buffer content and return nonzero if their content is same
+int binary_data_same(struct binary_data *left, struct binary_data *right);
+
 
 #endif
