@@ -25,7 +25,7 @@ fwspi_CFLAGS = -DFWSPI
 fwspi_LDADD = -lmodbus $(common_ldflags)
 
 fwi2c_SOURCES = \
-    fw.c fwimage.c fwconfig.c fwopt.c fwdriveri2c.c fwbin.c
+    fw.c fwimage.c fwconfig.c fwopt.c fwdriveri2c.c fwbin.c binary_data.c
 fwi2c_CFLAGS = -DFWI2C
 fwi2c_LDADD = -li2c $(common_ldflags)
 

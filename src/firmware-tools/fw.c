@@ -31,12 +31,14 @@
 #include "armutil.h"
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #include <unistd.h>
 //#include "unipiutil.h"
 #include "config.h"
 #include "fwimage.h"
 #include "fwopt.h"
 #include "fwdriver.h"
+#include "binary_data.h"
 
 int verbose = 0;
 
@@ -369,6 +371,53 @@ int auto_update(void)
 	return 0;
 }
 
+int i2c_configure(char *rdfile, char *wrfile, void *channel)
+{
+#ifdef FWI2C
+  if (!driver.configure) {
+    eprintf("This driver doesn't support configuration.\n");
+    return 1;
+  }
+
+  struct binary_data wdata = {NULL, 0}, rdata = {NULL, 0}, *pwdata = NULL, *prdata = NULL;
+
+  // read configuration if commanded
+  if (wrfile) {
+    if (binary_data_read(&wdata, wrfile))
+      return 1;
+    pwdata = &wdata;
+  }
+
+  // command store configuration
+  if (rdfile)
+    prdata = &rdata;
+
+  // apply configuration transaction
+  if (driver.configure(channel, pwdata, prdata)) {
+    eprintf("Could not configure unit.\n");
+    goto error;
+  }
+
+  // store configuration when commanded
+  if (rdfile && binary_data_write(prdata, rdfile)) {
+    eprintf("Could not store actual configuration.\n");
+    goto error;
+  }
+
+  binary_data_free(&rdata);
+  binary_data_free(&wdata);
+  return 0;
+
+error:
+  binary_data_free(&rdata);
+  binary_data_free(&wdata);
+  return -1;
+
+#else
+  return 0;
+#endif
+}
+
 
 int main(int argc, char **argv)
 {
@@ -452,6 +501,11 @@ int main(int argc, char **argv)
             upgrade_bootloader7(bv, channel);
         upload_firmware(bv, channel, do_verify, do_resetrw);
     }
+
+    if ((do_i2c_rdconf || do_i2c_wrconf) && i2c_configure(do_i2c_rdconf, do_i2c_wrconf, channel))
+      goto err;
+
+
     driver.close(channel);
     return 0;
 err:

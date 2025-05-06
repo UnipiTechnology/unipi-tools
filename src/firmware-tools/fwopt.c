@@ -43,9 +43,13 @@ int do_final= 0;
 int do_auto= 0;
 int do_upgrade = 0;
 int do_downgrade = 0;
+char *do_i2c_wrconf = NULL;
+char *do_i2c_rdconf = NULL;
 
 #define CL_HELP     500
 #define CL_VERSION  501
+#define CL_WRCONF 502
+#define CL_RDCONF 503
 
 static struct option long_options[] = {
 
@@ -76,6 +80,8 @@ static struct option long_options[] = {
 #ifdef FWI2C
   {"index", required_argument,	0, 'i'},
   {"port",  required_argument,  0, 'p'},
+  {"write-conf",  required_argument,  0, CL_WRCONF},
+  {"read-conf",  required_argument,  0, CL_RDCONF},
 #endif
   {0, 0, 0, 0}
 };
@@ -290,6 +296,21 @@ int parseopt(int argc, char **argv)
            }
 
            com_options.PORT = strdup(buf);
+           break;
+
+       case CL_WRCONF:
+           if (access(optarg, F_OK)) {
+             eprintf("Configuration file %s must exist\n", optarg);
+             return 1;
+           }
+           do_i2c_wrconf = strdup(optarg);
+           break;
+
+       case CL_RDCONF:
+           if (!access(optarg, F_OK))
+             eprintf("Configuration file %s will be overwritten!\n", optarg);
+
+           do_i2c_rdconf = strdup(optarg);
            break;
 #endif
        case CL_HELP:
