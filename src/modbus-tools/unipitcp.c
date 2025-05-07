@@ -262,6 +262,8 @@ static void close_event(mb_event_data_t* event_data)
     free(event_data);
 }
 
+#define OPT_VIRTUALLED_PATH 1000
+
 
 static struct option long_options[] = {
   {"verbose", no_argument,       0, 'v'},
@@ -272,6 +274,7 @@ static struct option long_options[] = {
   {"bauds",required_argument, 0, 'b'},
   {"broadcast-address", required_argument, 0, 'a'},
   {"info", no_argument, 0, 'i'},
+  {"led-coil-path", optional_argument, 0, OPT_VIRTUALLED_PATH},
   {0, 0, 0, 0}
 };
 
@@ -408,6 +411,10 @@ int main(int argc, char *argv[])
     		   exit(EXIT_FAILURE);
     	   }
     	   break;
+       case OPT_VIRTUALLED_PATH:
+         if (virtual_leds_option(0, optarg))
+           exit(EXIT_FAILURE);
+         break;
        case 'i':
     	   printf("Version: %s\n", version_string);
     	   exit(EXIT_SUCCESS);
@@ -443,7 +450,6 @@ int main(int argc, char *argv[])
     if (channel) {
         initialize_virtual_coils(channel);
     }
-    virtual_leds_init();
 
     server_socket = modbus_tcp_listen(nb_ctx->ctx, NB_CONNECTION);
     printf("Unipi TCP Modbus Server: Listening Connection Established RET:%d\n", server_socket);

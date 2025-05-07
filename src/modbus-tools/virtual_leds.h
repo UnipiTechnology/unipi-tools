@@ -25,8 +25,8 @@
 
 #include <stdint.h>
 
-// initialize the driver
-void virtual_leds_init(void);
+// parse the associated option
+int virtual_leds_option(int option_index, const char* arg);
 
 // detect if some coil is inside of memoryspace
 int virtual_leds_touched(uint16_t reg, uint8_t nb);
