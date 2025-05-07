@@ -69,11 +69,11 @@ int virtual_leds_option(int option_index, const char* arg)
        !strcasecmp(arg,"NO")) {
     dbg_(0, "Disabling led-coil mapper\n");
     _vleds_enabled = 0;
-  } else if (strcasecmp(arg,"SYS")) {
+  } else if (!strcasecmp(arg,"SYS")) {
     dbg_(0, "For led-coil using sysfs file\n");
     _vleds_enabled = 1;
     _vleds_path = VIRTUALLED_SYSFILE;
-  } else if (strcasecmp(arg,"RUN")) {
+  } else if (!strcasecmp(arg,"RUN")) {
     dbg_(0, "For led-coil using run symlink file\n");
     _vleds_enabled = 1;
     _vleds_path = VIRTUALLED_RUNFILE;
