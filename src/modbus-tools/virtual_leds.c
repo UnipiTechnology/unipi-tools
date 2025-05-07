@@ -101,8 +101,10 @@ int virtual_leds_touched(uint16_t reg, uint8_t nb)
 
 int virtual_leds_write(uint16_t reg, uint8_t cnt, uint8_t* data)
 {
-  if (!_vleds_enabled)
+  if (!_vleds_enabled) {
+    err_(3, "ULED logic error, access on %d-%d in disabled state\n", reg, reg + cnt);
     return -1;
+  }
 
   for (int led = 0; led < cnt; ++led) {
     int e = _update_led(reg - VIRTUALLED_COILBASE + led, data[led / 8] & (1 << (led % 8)));
@@ -114,20 +116,34 @@ int virtual_leds_write(uint16_t reg, uint8_t cnt, uint8_t* data)
 
 static int _update_led(uint16_t led, int value)
 {
-  if (!_vleds_enabled || led < 0 || led > 31)
+  if (!_vleds_enabled || led < 0 || led > 31) {
+    dbg_(3, "ULED %d out of range\n", led + 1);
     return -1;
+  }
+
+  static uint32_t _errors = 0;
+  uint32_t mask = 1 << led;
 
   char filename[256];
   snprintf(filename, 255, _vleds_path, led + 1);
   filename[255] = 0;
 
   int fd = open(filename, O_WRONLY);
-  if (fd < 0)
+  if (fd < 0) {
+    // show only first error
+    if (!(_errors & mask))
+      dbg_(3, "ULED %d error accessing %s (next error prints inhibited)\n", led + 1, filename);
+    _errors |= mask;
     return -1;
+  }
 
   uint8_t ch = value ? '1' : '0';
   write(fd, &ch, 1);
   close(fd);
+
+  if (_errors & mask)
+    dbg_(3, "ULED %d access to %s corrected\n", led + 1, filename);
+  _errors &= ~mask;
 
   dbg_(2, "ULED %d set %c\n", led + 1, ch);
   return 0;
