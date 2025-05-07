@@ -129,7 +129,7 @@ static int _update_led(uint16_t led, int value)
   write(fd, &ch, 1);
   close(fd);
 
-  dbg_(2, "ULED %d set %c\n", led + 1, value);
+  dbg_(2, "ULED %d set %c\n", led + 1, ch);
   return 0;
 }
 
