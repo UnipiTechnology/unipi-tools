@@ -127,7 +127,7 @@ int nb_modbus_reply(nb_modbus_t *nb_ctx, uint8_t *req, int req_length, int broad
     }
     function = req[offset];
     address = (req[offset + 1] << 8) + req[offset + 2];
-    vvprintf("FC: %u Address is %u, slave %u\n", function, address, slave);
+    dbg_(2,"FC: %u Address is %u, slave %u\n", function, address, slave);
 
     rsp_length = _MODBUS_TCP_PRESET_RSP_LENGTH;
     if (slave == 0) {
@@ -439,7 +439,7 @@ struct kchannel* add_channel(nb_modbus_t*  nb_ctx, uint8_t index, const char *de
 	lib_verbose = verbose;
 	sprintf(channelname, UNIPICHANNELNAME, index);
 
-	if (verbose) printf("ADD CHANNEL: %s\n", channelname);
+	dbg_(1, "ADD CHANNEL: %s\n", channelname);
 
 	ret = access(channelname, R_OK | W_OK);
 	if (ret == 0) {
@@ -462,7 +462,7 @@ struct kchannel* add_channel(nb_modbus_t*  nb_ctx, uint8_t index, const char *de
 	}
 	channel->next = c;
 	*last = channel;
-	if (verbose) printf("ADD CHANNEL: OK\n");
+	dbg_(1, "ADD CHANNEL: OK\n");
 	return channel;
 }
 

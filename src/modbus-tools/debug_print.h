@@ -24,14 +24,9 @@
 #ifndef UNIPI_TOOLS_DEBUG_PRINT_H
 #define UNIPI_TOOLS_DEBUG_PRINT_H
 
+#include <stdio.h>
+
 extern int verbose;
-
-#define vprintf( ... ) do { if (verbose > 0) printf( __VA_ARGS__ ); } while (0)
-#define vvprintf( ... ) do { if (verbose > 1) printf( __VA_ARGS__ ); } while (0)
-
-#define vprintf_1(f, args...)	do { if (verbose >= 1) printf(f, ##args); } while (0)
-#define vprintf_2(f, args...)	do { if (verbose >= 2) printf(f, ##args); } while (0)
-#define eprintf(f, args...)	do { fprintf(stderr, f, ##args); } while (0)
 
 #define dbg_(verb, format, args...) do { if(verbose >= verb) fprintf(stdout, format, ##args); } while (0)
 #define err_(verb, format, args...) do { if(verbose >= verb) fprintf(stderr, format, ##args); } while (0)
