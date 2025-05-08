@@ -35,8 +35,8 @@
 
 #include "fwconfig.h"
 #include "fwdriver.h"
-#include "fwimage.h"   // eprintf
 #include "kchannel.h"  // Tboard_version
+#include "debug_print.h"
 
 // local debug printing facility
 #define DRIVERNAME  "driver-i2c: "
@@ -238,7 +238,7 @@ int fwi2c_configure(void* channel, struct binary_data *upload, struct binary_dat
   dbg_(4, "  finalize upload=%p download=%p\n", upload, download);
 
   if (!upload && !download) {
-    eprintf("Doesn't know what to do with configuration \n");
+    err_(0,"Doesn't know what to do with configuration \n");
     return -1;
   }
 
@@ -249,12 +249,12 @@ int fwi2c_configure(void* channel, struct binary_data *upload, struct binary_dat
     goto error;
 
   if (upload && upload->length != 96) {
-    eprintf("Only %d-byte file configuration is currently supported. You given %ld bytes.\n", 96, upload->length);
+    err_(0,"Only %d-byte file configuration is currently supported. You given %ld bytes.\n", 96, upload->length);
     goto error;
   }
 
   if (download && download->length != 96) {
-    eprintf("Only %d-byte file configuration is currently supported. You given %ld bytes.\n", 96, download->length);
+    err_(0,"Only %d-byte file configuration is currently supported. You given %ld bytes.\n", 96, download->length);
     goto error;
   }
 
