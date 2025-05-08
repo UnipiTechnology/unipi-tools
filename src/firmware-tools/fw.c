@@ -125,7 +125,7 @@ int upgrade_bootloader(Tboard_version *bv, void* channel)
 	}
 
 	// write bootloader
-	vprintf_1("Sending %d pages.\n", n);
+	dbg_(1,"Sending %d pages.\n", n);
 	if (driver.flash(channel, pd_array, n, TRUE) != 0) goto err;
 
 	// reboot
@@ -138,7 +138,7 @@ int upgrade_bootloader(Tboard_version *bv, void* channel)
 		goto err;
 
 	if (SW_MAJOR(bv->sw_version) < 6) {
-		eprintf("Unsuccessful upgrade: %s.\n", strerror(errno));
+		err_(0,"Unsuccessful upgrade: %s.\n", strerror(errno));
 		goto err;
 	}
 	ret = 0;
@@ -187,7 +187,7 @@ int upgrade_bootloader7(Tboard_version *bv, void* channel)
 	}
 
 	// write bootloader
-	vprintf_1("Sending %d pages.\n", n);
+	dbg_(1,"Sending %d pages.\n", n);
 	if (driver.flash(channel, pd_array, n, TRUE) != 0) goto err;
 
 	// reboot
@@ -200,7 +200,7 @@ int upgrade_bootloader7(Tboard_version *bv, void* channel)
 		goto err;
 
 	if (SW_MAJOR(bv->sw_version) < 6) {
-		eprintf("Unsuccessful upgrade: %s.\n", strerror(errno));
+		err_(0,"Unsuccessful upgrade: %s.\n", strerror(errno));
 		goto err;
 	}
 	ret = 0;
@@ -242,7 +242,7 @@ int upload_firmware(Tboard_version *bv, void* channel, int do_verify, int do_res
 			ret = check_locked_firmware(header.hwversion, channel);
 	}
 	if (ret != 0) {
-		eprintf("Cannot load firmware binary.\n");
+		err_(0,"Cannot load firmware binary.\n");
 		goto err;
 	}
 
@@ -267,7 +267,7 @@ int upload_firmware(Tboard_version *bv, void* channel, int do_verify, int do_res
 			n++;
 		}
 	}
-	vprintf_1("Sending %d pages.\n", n);
+	dbg_(1,"Sending %d pages.\n", n);
 	if (driver.flash(channel, pd_array, n, do_verify) != 0) goto err;
 
 	if (!verbose) printf("\n");
@@ -277,12 +277,12 @@ int upload_firmware(Tboard_version *bv, void* channel, int do_verify, int do_res
 	if (bv != NULL)
 		bv->sw_version=0;
 	if ((bv = driver.identify(channel)) == NULL)
-		vprintf_1("Cannot read identification regs\n");
+		dbg_(1,"Cannot read identification regs\n");
 	else
 		show_firmware_info(bv);
 	// confirm firmware
 	if ((driver.confirm(channel)!=0) && do_resetrw) {
-		vprintf_1("Setting default parameters\n");
+		dbg_(1,"Setting default parameters\n");
 		com_options.BAUD=19200;  com_options.parity='N'; com_options.stopbit=1;
 		com_options.DEVICE_ID=15;
 		driver.reopen(channel, &com_options);
@@ -375,7 +375,7 @@ int i2c_configure(char *rdfile, char *wrfile, void *channel)
 {
 #ifdef FWI2C
   if (!driver.configure) {
-    eprintf("This driver doesn't support configuration.\n");
+    err_(0,"This driver doesn't support configuration.\n");
     return 1;
   }
 
@@ -394,13 +394,13 @@ int i2c_configure(char *rdfile, char *wrfile, void *channel)
 
   // apply configuration transaction
   if (driver.configure(channel, pwdata, prdata)) {
-    eprintf("Could not configure unit.\n");
+    err_(0,"Could not configure unit.\n");
     goto error;
   }
 
   // store configuration when commanded
   if (rdfile && binary_data_write(prdata, rdfile)) {
-    eprintf("Could not store actual configuration.\n");
+    err_(0,"Could not store actual configuration.\n");
     goto error;
   }
 
@@ -452,7 +452,7 @@ int main(int argc, char **argv)
                                 SW_MAJOR(header->swversion), SW_MINOR(header->swversion), program_name);
     } else {
         if (do_upgrade) {
-            eprintf("Cannot do upgrade. Try normal update.\n");
+            err_(0,"Cannot do upgrade. Try normal update.\n");
             do_upgrade = 0;
         }
     }
@@ -482,7 +482,7 @@ int main(int argc, char **argv)
             do_resetrw = 1;
         } else if (do_final) {
             if (!IS_CALIB(bv->hw_version)) {
-                eprintf("Only calibrating version can be reprogrammed to final\n");
+                err_(0,"Only calibrating version can be reprogrammed to final\n");
                 goto err;
             }
             if (upboard < 16)
@@ -491,7 +491,7 @@ int main(int argc, char **argv)
                 bv->hw_version = upboard;
 
             if (bv->hw_version == 0) {
-                eprintf("Incompatible base and upper boards. Use one of:\n");
+                err_(0,"Incompatible base and upper boards. Use one of:\n");
                 print_upboards(bv->base_hw_version);
                 goto err;
             }

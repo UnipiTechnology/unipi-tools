@@ -44,9 +44,9 @@ int load_bin(Tboard_version* bv, T_image_header *header, void* prog_data, void* 
 #endif
 
 	fname = firmware_name(bv, firmwaredir, ".bin");
-	vprintf_1("Loading firmware bin: %s\n", fname);
+	dbg_(1,"Loading firmware bin: %s\n", fname);
 	if ((fd = fopen(fname, "rb")) == NULL) {
-		eprintf("Cannot open file %s\n", fname);
+		err_(0,"Cannot open file %s\n", fname);
 		goto err1;
 	}
 #ifdef OS_WIN32
@@ -62,10 +62,10 @@ int load_bin(Tboard_version* bv, T_image_header *header, void* prog_data, void* 
     	}
     	read_n = filesize;
     }
-    vprintf_2("READ: %d %x %d\n", read_n, prog_data[0], filesize);
+    dbg_(2,"READ: %d %x %d\n", read_n, prog_data[0], filesize);
 #endif
 	if (read_n <= 0) {
-		eprintf("Cannot read firmware %s\n", fname);
+		err_(0,"Cannot read firmware %s\n", fname);
 		goto err;
 	}
 	header->firmware_length = read_n;
@@ -73,9 +73,9 @@ int load_bin(Tboard_version* bv, T_image_header *header, void* prog_data, void* 
 	free(fname);
 
 	fname = firmware_name(bv, firmwaredir, ".rw");
-	vprintf_1("Loading firmware rw: %s\n", fname);
+	dbg_(1,"Loading firmware rw: %s\n", fname);
 	if ((fd = fopen(fname, "rb")) == NULL) {
-		eprintf("Cannot open file %s\n", fname);
+		err_(0,"Cannot open file %s\n", fname);
 		goto err1;
 	}
 #ifdef OS_WIN32
@@ -91,10 +91,10 @@ int load_bin(Tboard_version* bv, T_image_header *header, void* prog_data, void* 
     	}
     	read_n = filesize;
     }
-    vprintf_2("READ: %d %x %d\n", read_n, rw_data[0], filesize);
+    dbg_(2,"READ: %d %x %d\n", read_n, rw_data[0], filesize);
 #endif
 	if (read_n <= 0) {
-		eprintf("Cannot read firmware %s\n", fname);
+		err_(0,"Cannot read firmware %s\n", fname);
 		goto err;
 	}
 	header->rwdata_length = read_n;
