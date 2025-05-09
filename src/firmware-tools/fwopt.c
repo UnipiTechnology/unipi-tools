@@ -216,13 +216,13 @@ int parseopt(int argc, char **argv)
            unit = 0;
            break;
        case 'i':
-           err_(0,"Unsupported option, use -u instead.");
+           err_(-1,"Unsupported option, use -u instead.");
            return 1;
            break;
        case 'u':
            unit = atoi(optarg);
            if (unit==0 || unit > 254) {
-               err_(0,"Unit must be non-zero integer and less than 255 (given %s)\n", optarg);
+               err_(-1,"Unit must be non-zero integer and less than 255 (given %s)\n", optarg);
                return 1;
            }
            sprintf(buf, "/dev/unipichannel%d", unit);
@@ -239,28 +239,28 @@ int parseopt(int argc, char **argv)
        case 'r':
            com_options.parity = optarg[0];
            if (com_options.parity!='N' && com_options.parity != 'E' && com_options.parity != 'O') {
-               err_(0,"Parity must be N or E or O(given %s)\n", optarg);
+               err_(-1,"Parity must be N or E or O(given %s)\n", optarg);
                return 1;
            }
            break;
        case 'o':
            com_options.stopbit = atoi(optarg);
            if (com_options.stopbit!=1 && com_options.stopbit != 2) {
-               err_(0,"Stopbits must be 1 or 2 (given %s)\n", optarg);
+               err_(-1,"Stopbits must be 1 or 2 (given %s)\n", optarg);
                return 1;
            }
            break;
        case 'u':
            com_options.DEVICE_ID = atoi(optarg);
            if (com_options.DEVICE_ID==0) {
-               err_(0,"Unit must be non-zero integer (given %s)\n", optarg);
+               err_(-1,"Unit must be non-zero integer (given %s)\n", optarg);
                return 1;
            }
            break;
        case 't':
            com_options.timeout_ms = atoi(optarg);
            if (com_options.timeout_ms <= 0) {
-               err_(0,"Timeout must be greater than zero integer (given %s)\n", optarg);
+               err_(-1,"Timeout must be greater than zero integer (given %s)\n", optarg);
                return 1;
            }
            break;
@@ -274,7 +274,7 @@ int parseopt(int argc, char **argv)
              char *end;
 	           com_options.DEVICE_ID = strtoul(optarg, &end, 0);
              if (*end || !*optarg || (com_options.DEVICE_ID <= 0) || (com_options.DEVICE_ID > 0xFF)) {
-                 err_(0,"Unit address must be integer or hex (0xXX) in range 1 ... 255 (given %s)\n", optarg);
+                 err_(-1,"Unit address must be integer or hex (0xXX) in range 1 ... 255 (given %s)\n", optarg);
                  return 1;
              }
              break;
@@ -282,7 +282,7 @@ int parseopt(int argc, char **argv)
        case 'i':
            unit = atoi(optarg);
            if (unit<=0) {
-               err_(0,"Interface must be positive integer (given %s)\n", optarg);
+               err_(-1,"Interface must be positive integer (given %s)\n", optarg);
                return 1;
            }
            snprintf(buf, 255, "/dev/i2c/%d", unit);
@@ -292,7 +292,7 @@ int parseopt(int argc, char **argv)
              snprintf(buf, 255, "/dev/i2c-%d", unit);
 
            if (access(optarg, F_OK)) {
-             err_(0,"Specified I2C bus interface /dev/i2c-%s or symlink /dev/i2c/%s not found\n", optarg, optarg);
+             err_(-1,"Specified I2C bus interface /dev/i2c-%s or symlink /dev/i2c/%s not found\n", optarg, optarg);
              return 1;
            }
 
@@ -301,7 +301,7 @@ int parseopt(int argc, char **argv)
 
        case CL_WRCONF:
            if (access(optarg, F_OK)) {
-             err_(0,"Configuration file %s must exist\n", optarg);
+             err_(-1,"Configuration file %s must exist\n", optarg);
              return 1;
            }
            do_i2c_wrconf = strdup(optarg);
@@ -309,7 +309,7 @@ int parseopt(int argc, char **argv)
 
        case CL_RDCONF:
            if (!access(optarg, F_OK))
-             err_(0,"Configuration file %s will be overwritten!\n", optarg);
+             err_(-1,"Configuration file %s will be overwritten!\n", optarg);
 
            do_i2c_rdconf = strdup(optarg);
            break;
@@ -334,17 +334,17 @@ int parseopt(int argc, char **argv)
     }
 
     if ((do_upgrade || do_downgrade) && (do_calibrate || do_final)) {
-        err_(0,"Cannot combine upgrade with -C or -F\n");
+        err_(-1,"Cannot combine upgrade with -C or -F\n");
         return 1;
     }
 
     if (com_options.PORT == NULL) {
-        err_(0,"Port device must be specified\n");
+        err_(-1,"Port device must be specified\n");
         print_usage(argv[0]);
         return 1;
     }
     if ((com_options.DEVICE_ID) < 0 && ! do_auto && unit == -1) {
-        err_(0,"Device index or unit or spidev must be defined\n");
+        err_(-1,"Device index or unit or spidev must be defined\n");
         print_usage(argv[0]);
         return 1;
     }

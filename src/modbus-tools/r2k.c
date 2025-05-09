@@ -35,8 +35,8 @@ static int write_addr_register(modbus_t *ctx, uint16_t value)
         rc = modbus_write_register(ctx, reg, value);
         if (rc == 1) return 0;
     }
-    err_(0, "ERROR modbus_write_register (%d)\n", rc);
-    err_(0, "Address = %d, value = 0x%X\n", reg, value);
+    err_(-1, "ERROR modbus_write_register (%d)\n", rc);
+    err_(-1, "Address = %d, value = 0x%X\n", reg, value);
     return -1;
 }
 
@@ -50,12 +50,12 @@ static int check_addr_register(modbus_t *ctx, uint16_t value)
         if ((rc == 1) && (read_value == value)) return 0;
     }
     if (rc == 1){
-        err_(0, "ERROR check address_register (%d)\n", rc);
-        err_(0, "Address = %d, expected value = 0x%X read = 0x%X\n",
+        err_(-1, "ERROR check address_register (%d)\n", rc);
+        err_(-1, "Address = %d, expected value = 0x%X read = 0x%X\n",
                reg, value, read_value);
     } else {
-        err_(0, "ERROR modbus_read_register (%d)\n", rc);
-        err_(0, "Address = %d, expected value = 0x%X\n",  reg, value);
+        err_(-1, "ERROR modbus_read_register (%d)\n", rc);
+        err_(-1, "Address = %d, expected value = 0x%X\n",  reg, value);
     }
     return -1;
 }
@@ -69,8 +69,8 @@ static int read_block(modbus_t *ctx, uint16_t databuffer[])
         if (rc == R2K_BLOCK_SIZE)
             return 0;
     }
-    err_(0, "ERROR modbus_read_block registers (%d)\n", rc);
-    err_(0, "Address = 0x%04x\n", reg);
+    err_(-1, "ERROR modbus_read_block registers (%d)\n", rc);
+    err_(-1, "Address = 0x%04x\n", reg);
     return -1;
 }
 
@@ -85,8 +85,8 @@ static int write_block(modbus_t *ctx, uint16_t databuffer[])
             return 0;
         }
     }
-    err_(0, "ERROR modbus_write_block registers (%d)\n", rc);
-    err_(0, "Address = 0x%04x\n", reg);
+    err_(-1, "ERROR modbus_write_block registers (%d)\n", rc);
+    err_(-1, "Address = 0x%04x\n", reg);
     return -1;
 }
 
@@ -171,14 +171,14 @@ int main(int argc, char** argv)
        case 'p':
            port = atoi(optarg);
            if (port <= 0) {
-               err_(0, "Port must be non-zero integer (given %s)\n", optarg);
+               err_(-1, "Port must be non-zero integer (given %s)\n", optarg);
                exit(EXIT_FAILURE);
            }
            break;
        case 'a':
            slave = atoi(optarg);
            if (slave <= 0) {
-               err_(0, "Slave must be non-zero integer (given %s)\n", optarg);
+               err_(-1, "Slave must be non-zero integer (given %s)\n", optarg);
                exit(EXIT_FAILURE);
            }
            break;
@@ -193,7 +193,7 @@ int main(int argc, char** argv)
         //fd = open(save_file, O_WRONLY | O_CREAT);
         fd = creat(save_file, S_IRUSR|S_IWUSR);
         if (fd < 0) {
-            err_(0, "Cannoc create file to write %s: %s\n",
+            err_(-1, "Cannoc create file to write %s: %s\n",
                     save_file, strerror(errno));
             return 2;
         }
@@ -201,7 +201,7 @@ int main(int argc, char** argv)
     */
     td = mhash_init(MHASH_SHA1);
     if (td == MHASH_FAILED) {
-        err_(0, "Error on hash init\n");
+        err_(-1, "Error on hash init\n");
         exit(EXIT_FAILURE);
     }
 
@@ -210,7 +210,7 @@ int main(int argc, char** argv)
     modbus_set_debug(ctx, FALSE);
 
     if (modbus_connect(ctx) == -1) {
-        err_(0, "Connection to modbus host %s:%d failed: %s\n",
+        err_(-1, "Connection to modbus host %s:%d failed: %s\n",
                 host, port, modbus_strerror(errno));
         modbus_free(ctx);
         exit(EXIT_FAILURE);
@@ -276,7 +276,7 @@ int main(int argc, char** argv)
     }
 
     mhash_deinit(td, file_hash);
-    // for (int i=0; i<20; i++) err_(0, "%02x ", file_hash[i]);
+    // for (int i=0; i<20; i++) err_(-1, "%02x ", file_hash[i]);
 
     if ((rc >= 0) && do_write && (file_size > 0)) {
         /* write first block with length and hash */
@@ -290,9 +290,9 @@ int main(int argc, char** argv)
     if (do_read) {
         for (int i=0; i<R2K_HASH_SIZE; i++) 
             if (file_hash[i]!=r2k_hash[i]) {
-                err_(0, "Hash of data is not valid");
-                for (int j=0; j<R2K_HASH_SIZE; j++) err_(0, "%02x", file_hash[j]);
-                for (int j=0; j<R2K_HASH_SIZE; j++) err_(0, "%02x", r2k_hash[j]);
+                err_(-1, "Hash of data is not valid");
+                for (int j=0; j<R2K_HASH_SIZE; j++) err_(-1, "%02x", file_hash[j]);
+                for (int j=0; j<R2K_HASH_SIZE; j++) err_(-1, "%02x", r2k_hash[j]);
                 rc = -1;
                 break;
             }
