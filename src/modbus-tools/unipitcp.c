@@ -310,7 +310,7 @@ __attribute__((unused))static int parse_slist(char * option, char** results)  //
         }
         results[i] = malloc(len+1);
         if (! results[i]) {
-            err_(0,"Error allocate string\n");
+            err_(-1,"Error allocate string\n");
             abort();
         }
         strncpy(results[i],p,len);
@@ -391,23 +391,23 @@ int main(int argc, char *argv[])
        case 'p':
            tcp_port = atoi(optarg);
            if (tcp_port==0) {
-               err_(0,"Port must be non-zero integer (given %s)\n", optarg);
+               err_(-1,"Port must be non-zero integer (given %s)\n", optarg);
                exit(EXIT_FAILURE);
            }
            break;
        case 's':
-           err_(0,"Deprecated parameter -s \n");
+           err_(-1,"Deprecated parameter -s \n");
            break;
        case 'b':
            if (parse_ilist(optarg, spi_speed) == 0) {
-               err_(0,"Bad bauds count(1-3) (%s))\n", optarg);
+               err_(-1,"Bad bauds count(1-3) (%s))\n", optarg);
                exit(EXIT_FAILURE);
            }
            break;
        case 'a':
     	   broadcast_address = atoi(optarg);
     	   if (broadcast_address < 0 || broadcast_address > 255) {
-    		   err_(0,"Invalid broadcast address specified (given %s)\n", optarg);
+    		   err_(-1,"Invalid broadcast address specified (given %s)\n", optarg);
     		   exit(EXIT_FAILURE);
     	   }
     	   break;

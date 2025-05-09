@@ -39,7 +39,7 @@ int binary_data_alloc(struct binary_data *bd, ssize_t size)
   if (bd->pointer)
     return 0;
 
-  err_(0,"Can't allocate buffer for %ld bytes\n", size);
+  err_(-1,"Can't allocate buffer for %ld bytes\n", size);
   bd->length = 0;
   return -1;
 }
@@ -58,7 +58,7 @@ int binary_data_read(struct binary_data *bd, const char *datafile)
 {
   int fd = open(datafile, O_RDONLY);
   if (fd < 0) {
-    err_(0,"Could not open data file %s. Error: %s\n", datafile, strerror(errno));
+    err_(-1,"Could not open data file %s. Error: %s\n", datafile, strerror(errno));
     return -1;
   }
 
@@ -66,13 +66,13 @@ int binary_data_read(struct binary_data *bd, const char *datafile)
   lseek(fd, 0, SEEK_SET);
 
   if (binary_data_alloc(bd, size)) {
-    err_(0,"Can't allocate buffer for %ld bytes\n", size);
+    err_(-1,"Can't allocate buffer for %ld bytes\n", size);
     close(fd);
     return -1;
   }
 
   if (read(fd, bd->pointer, bd->length) != size) {
-    err_(0,"Could not read entire finalization (%ld bytes) from file %s. Error: %s\n", size, datafile, strerror(errno));
+    err_(-1,"Could not read entire finalization (%ld bytes) from file %s. Error: %s\n", size, datafile, strerror(errno));
     binary_data_free(bd);
     close(fd);
     return -1;
@@ -86,12 +86,12 @@ int binary_data_write(struct binary_data *bd, const char *datafile)
 {
   int fd = open(datafile, O_CREAT | O_WRONLY | O_TRUNC, 0600);
   if (fd < 0) {
-    err_(0,"Could not open data file %s. Error: %s\n", datafile, strerror(errno));
+    err_(-1,"Could not open data file %s. Error: %s\n", datafile, strerror(errno));
     return -1;
   }
 
   if (write(fd, bd->pointer, bd->length) != bd->length) {
-    err_(0,"Could not store %ld bytes to data file %s. Error: %s\n", bd->length, datafile, strerror(errno));
+    err_(-1,"Could not store %ld bytes to data file %s. Error: %s\n", bd->length, datafile, strerror(errno));
     close(fd);
     return -1;
   }
