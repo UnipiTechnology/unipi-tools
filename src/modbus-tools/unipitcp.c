@@ -121,7 +121,7 @@ static void repool_buffer(mb_buffer_t* buffer)
 {
     mb_buffer_t* prev = b_stack;
     b_stack = buffer;
-    //printf("repool %d\n", buffer->id);
+    //dbg_(0,"repool %d\n", buffer->id);
     while (buffer->next != NULL) {
         buffer = buffer->next;
     }
@@ -133,10 +133,10 @@ static mb_buffer_t* get_from_pool(void)
 {
     mb_buffer_t* prev = b_stack;
     if (b_stack == NULL) {
-        //printf("get from pool NULL\n");
+        //dbg_(0,"get from pool NULL\n");
         return NULL;
     }
-    //printf("get from pool %d\n", b_stack->id);
+    //dbg_(0,"get from pool %d\n", b_stack->id);
     b_stack = prev->next;
     prev->index = 0;
     prev->sendindex = 0;
@@ -224,7 +224,7 @@ static int parse_buffer(mb_event_data_t* event_data)
         }
         buffer->index = nb_modbus_reply(nb_ctx, buffer->data, reqlen, broadcast_address);
         if ( buffer->index > 0) {
-            //printf("wr len = %d\n", buffer->index);
+            //dbg_(0,"wr len = %d\n", buffer->index);
             //debpr( buffer->data, buffer->index);
             if (event_data->wr_buffer != NULL) { /* add buffer to write_queue */
                 mb_buffer_t* last = event_data->wr_buffer;
@@ -310,7 +310,7 @@ __attribute__((unused))static int parse_slist(char * option, char** results)  //
         }
         results[i] = malloc(len+1);
         if (! results[i]) {
-            printf("Error allocate string\n");
+            err_(-1,"Error allocate string\n");
             abort();
         }
         strncpy(results[i],p,len);
@@ -391,23 +391,23 @@ int main(int argc, char *argv[])
        case 'p':
            tcp_port = atoi(optarg);
            if (tcp_port==0) {
-               printf("Port must be non-zero integer (given %s)\n", optarg);
+               err_(-1,"Port must be non-zero integer (given %s)\n", optarg);
                exit(EXIT_FAILURE);
            }
            break;
        case 's':
-           printf("Deprecated parameter -s \n");
+           err_(-1,"Deprecated parameter -s \n");
            break;
        case 'b':
            if (parse_ilist(optarg, spi_speed) == 0) {
-               printf("Bad bauds count(1-3) (%s))\n", optarg);
+               err_(-1,"Bad bauds count(1-3) (%s))\n", optarg);
                exit(EXIT_FAILURE);
            }
            break;
        case 'a':
     	   broadcast_address = atoi(optarg);
     	   if (broadcast_address < 0 || broadcast_address > 255) {
-    		   printf("Invalid broadcast address specified (given %s)\n", optarg);
+    		   err_(-1,"Invalid broadcast address specified (given %s)\n", optarg);
     		   exit(EXIT_FAILURE);
     	   }
     	   break;
@@ -452,7 +452,7 @@ int main(int argc, char *argv[])
     }
 
     server_socket = modbus_tcp_listen(nb_ctx->ctx, NB_CONNECTION);
-    printf("Unipi TCP Modbus Server: Listening Connection Established RET:%d\n", server_socket);
+    dbg_(0,"Unipi TCP Modbus Server: Listening Connection Established RET:%d\n", server_socket);
     if (server_socket == -1) {
         perror ("modbus_tcp_listen");
         abort ();
@@ -506,7 +506,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (verbose) printf("Starting primary loop\n");
+    dbg_(1, "Starting primary loop\n");
     /* The event loop */
     while (1) {
 #ifdef HAVE_SYSTEMD_SD_DAEMON_H
@@ -546,7 +546,7 @@ int main(int argc, char *argv[])
                             perror("Server accept() error");
                         break;
                     }
-                    vvprintf("New connection from %s:%d on socket %d\n",
+                    dbg_(2,"New connection from %s:%d on socket %d\n",
                                inet_ntoa(clientaddr.sin_addr), clientaddr.sin_port, newfd);
                     /* Make the incoming socket non-blocking and add it to the
                        list of fds to monitor. */
@@ -612,7 +612,7 @@ int main(int argc, char *argv[])
                                  event_data->rd_buffer->data + event_data->rd_buffer->index,
                                  wanted);
 
-                    //printf("read len = %d\n", count);
+                    //dbg_(0,"read len = %d\n", count);
                     //debpr( event_data->rd_buffer->data, count);
 
                     if (count == -1) {
@@ -624,7 +624,7 @@ int main(int argc, char *argv[])
                     }
                     if (count == 0) {
                         /* End of file. The remote has closed the connection. */
-                        vvprintf ("Closed connection on descriptor %d\n", event_data->fd);
+                        dbg_(2,"Closed connection on descriptor %d\n", event_data->fd);
                         close_event(event_data);
                         break;
                     }
