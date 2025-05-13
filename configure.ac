@@ -4,12 +4,9 @@
 # Take care to update the libtool versioning when required (LIBUNIPICHANNEL_LD_*).
 # http://www.gnu.org/software/libtool/manual/html_node/Libtool-versioning.html
 #
-m4_define([unipi_tools_version_major], [2])
-m4_define([unipi_tools_version_minor], [18])
-m4_define([unipi_tools_version_micro], [0])
 
 m4_define([unipi_tools_version],
-    [unipi_tools_version_major.unipi_tools_version_minor.unipi_tools_version_micro])
+    ['`git describe --tags --always --abbrev=6 || head -1 version || echo 2.18.0`'])
 
 AC_PREREQ([2.71])
 AC_INIT([unipi-tools],
@@ -27,13 +24,8 @@ AC_SYS_LARGEFILE
 AC_CONFIG_MACRO_DIR([m4])
 AM_SILENT_RULES([yes])
 
-LIBUNIPICHANNEL_VERSION_MAJOR=unipi_tools_version_major
-LIBUNIPICHANNEL_VERSION_MINOR=unipi_tools_version_minor
-LIBUNIPICHANNEL_VERSION_MICRO=unipi_tools_version_micro
+
 LIBUNIPICHANNEL_VERSION=unipi_tools_version
-AC_SUBST(LIBUNIPICHANNEL_VERSION_MAJOR)
-AC_SUBST(LIBUNIPICHANNEL_VERSION_MINOR)
-AC_SUBST(LIBUNIPICHANNEL_VERSION_MICRO)
 AC_SUBST(LIBUNIPICHANNEL_VERSION)
 
 # ABI version
