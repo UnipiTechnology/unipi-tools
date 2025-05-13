@@ -83,11 +83,11 @@ int virtual_leds_option(int option_index, const char* arg)
     //_vleds_path = strdup(arg)
     _vleds_enabled = 0;
   } else {
-    err_(0, "Unknown argument: %s for setting led-coil-mode\n\n Available: [default: RUN]\n", optarg);
-    err_(0, "  SYS                             Use direct devicetree /sys/class/leds/x[]-led/\n");
-    err_(0, "  RUN                             Use user-defined symlink /run/unipi-plc/by-sys/ULED[]/\n");
-    err_(0, "To entirely disable coils 3000 to sysfs led mapping, use empty argument or one of:\n");
-    err_(0, "  OFF | NO | DISABLED\n");
+    err_(-1, "Unknown argument: %s for setting led-coil-mode\n\n Available: [default: RUN]\n", optarg);
+    err_(-1, "  SYS                             Use direct devicetree /sys/class/leds/x[]-led/\n");
+    err_(-1, "  RUN                             Use user-defined symlink /run/unipi-plc/by-sys/ULED[]/\n");
+    err_(-1, "To entirely disable coils 3000 to sysfs led mapping, use empty argument or one of:\n");
+    err_(-1, "  OFF | NO | DISABLED\n");
     return -1;
   }
 

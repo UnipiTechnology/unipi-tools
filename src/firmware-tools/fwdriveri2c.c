@@ -35,8 +35,8 @@
 
 #include "fwconfig.h"
 #include "fwdriver.h"
-#include "fwimage.h"   // eprintf
 #include "kchannel.h"  // Tboard_version
+#include "debug_print.h"
 
 // local debug printing facility
 #define DRIVERNAME  "driver-i2c: "
@@ -85,7 +85,7 @@ void* fwi2c_open(struct comopt_struct *comopt)
 
 error:
   err_(3, "  Err(%d): %s\n", errno, strerror(errno));
-  err_(0, "Failed to open the i2c bus %s.\n", comopt->PORT);
+  err_(-1, "Failed to open the i2c bus %s.\n", comopt->PORT);
   if (fd)
     close(fd);
   return NULL;
@@ -142,7 +142,7 @@ Tboard_version* fwi2c_identify(void* channel)
 
 error:
   err_(3, "  Err(%d): %s\n", errno, strerror(errno));
-  err_(0, "Failed to identify firmware.\n");
+  err_(-1, "Failed to identify firmware.\n");
   return NULL;
 }
 
@@ -154,7 +154,7 @@ uint16_t fwi2c_get_firmware_lock(void* channel)
   if (lock < 0) {
     err_(3, "  In: read firmware lock @ 0xF4.\n");
     err_(3, "  Err(%d): %s\n", errno, strerror(errno));
-    err_(0, "Failed to get lock data.\n");
+    err_(-1, "Failed to get lock data.\n");
     return 0xFFFF;
   }
 
@@ -189,7 +189,7 @@ int fwi2c_reboot(void* channel)
   dbg_(1, "Resetting the board ...\n");
   if (i2c_smbus_write_byte_data(handle->fd, 0xE2, 0x55)) {
     err_(3, "  Err(%d): %s\n", errno, strerror(errno));
-    err_(0, "Failed to reset the board.\n");
+    err_(-1, "Failed to reset the board.\n");
     return -1;
   }
 
@@ -201,7 +201,7 @@ int fwi2c_flash(void* channel, struct page_description *pd_array, int count, int
 {
   struct i2c_handle *handle = channel;
 
-  err_(0, "Flashing over i2c is currently not supported\n");
+  err_(-1, "Flashing over i2c is currently not supported\n");
   return -1;
 }
 
@@ -238,7 +238,7 @@ int fwi2c_configure(void* channel, struct binary_data *upload, struct binary_dat
   dbg_(4, "  finalize upload=%p download=%p\n", upload, download);
 
   if (!upload && !download) {
-    eprintf("Doesn't know what to do with configuration \n");
+    err_(-1,"Doesn't know what to do with configuration \n");
     return -1;
   }
 
@@ -249,12 +249,12 @@ int fwi2c_configure(void* channel, struct binary_data *upload, struct binary_dat
     goto error;
 
   if (upload && upload->length != 96) {
-    eprintf("Only %d-byte file configuration is currently supported. You given %ld bytes.\n", 96, upload->length);
+    err_(-1,"Only %d-byte file configuration is currently supported. You given %ld bytes.\n", 96, upload->length);
     goto error;
   }
 
   if (download && download->length != 96) {
-    eprintf("Only %d-byte file configuration is currently supported. You given %ld bytes.\n", 96, download->length);
+    err_(-1,"Only %d-byte file configuration is currently supported. You given %ld bytes.\n", 96, download->length);
     goto error;
   }
 
@@ -289,7 +289,7 @@ error:
   if (download == &rdd)
     binary_data_free(&rdd);
   err_(3, "  Err(%d): %s\n", errno, strerror(errno));
-  err_(0, "Failed to finalize firmware\n");
+  err_(-1, "Failed to finalize firmware\n");
   return -1;
 }
 

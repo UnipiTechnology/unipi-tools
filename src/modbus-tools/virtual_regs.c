@@ -221,7 +221,7 @@ static void load_calibrating_const(struct kchannel* channel)
     }
     set_fp_by_mode();
     loaded = 1;
-    vvprintf("VIRTUAL REGS Vref=%5.3f use_calibration=%d\n", (3.3 * vrefint) / vref, use_calibration);
+    dbg_(2,"VIRTUAL REGS Vref=%5.3f use_calibration=%d\n", (3.3 * vrefint) / vref, use_calibration);
 }
 
 
@@ -243,7 +243,7 @@ int read_virtual_regs(struct kchannel* channel, uint16_t reg, uint8_t cnt, uint1
             fvalues[2] = ai2_reg2float(registers[2]);    // must be first
             fvalues[1] = ai1_reg2float(registers[1]);
             fvalues[0] = ao_reg2float(registers[0]);
-            vvprintf("VIRTUAL REGS fvalues=%f %f %f\n",fvalues[0],fvalues[1],fvalues[2]);
+            dbg_(2,"VIRTUAL REGS fvalues=%f %f %f\n",fvalues[0],fvalues[1],fvalues[2]);
             r0 = reg-3000;
             memcpy(result, ((uint16_t*)&fvalues)+r0, cnt*sizeof(uint16_t));
             return cnt;
@@ -262,7 +262,7 @@ static int prv_read_from_files(const char** filelist, uint8_t filelist_size, uin
 	}
 
 	for (int i=reg; i < reg + cnt; i++) {
-		vvprintf("Opening file %s \n", filelist[i]);
+		dbg_(2,"Opening file %s \n", filelist[i]);
 		FILE *fp;
 		int value;
 		fp = fopen(filelist[i] ,"r");
@@ -325,7 +325,7 @@ static int read_pure_virtual_regs_legacy(uint16_t reg, uint8_t cnt, uint16_t* re
 
 static int prv_read_file(char* path)
 {
-    vvprintf("Opening file %s \n", path);
+    dbg_(2,"Opening file %s \n", path);
     FILE *fp;
     int value;
     fp = fopen(path ,"r");
@@ -344,7 +344,7 @@ int read_pure_virtual_regs(uint16_t reg, uint8_t cnt, uint16_t* result)
     char path[256];
     int val, i;
 
-    vvprintf("Reading pure virtual reg: %u cnt: %u\n", reg, cnt);
+    dbg_(2,"Reading pure virtual reg: %u cnt: %u\n", reg, cnt);
 
     for (i=0; i< cnt; i++) {
         snprintf(path, sizeof(path), "/run/unipi-plc/virtual-regs/%d", reg+i);
@@ -381,7 +381,7 @@ int write_virtual_regs(struct kchannel* channel, uint16_t reg, uint8_t cnt, uint
             if ((reg==3000) && (cnt >=2)) {
                 swapped.val16[0] = values[0];
                 swapped.val16[1] = values[1];
-                if(verbose >= 1) printf("VIRTUAL REGS write fval=%f\n",swapped.fval);
+                dbg_(1, "VIRTUAL REGS write fval=%f\n",swapped.fval);
                 regval = ao_float2reg(swapped.fval);
                 if (channel->write_regs(channel, 2, 1, &regval)!=1) return -1;
                 return cnt;
@@ -395,7 +395,7 @@ int write_virtual_regs(struct kchannel* channel, uint16_t reg, uint8_t cnt, uint
             }
             swapped.val16[0] = values[1];
             swapped.val16[1] = values[0];
-            vvprintf("VIRTUAL REGS write fval=%f\n",swapped.fval);
+            dbg_(2,"VIRTUAL REGS write fval=%f\n",swapped.fval);
             regval = ao_float2reg(swapped.fval);
             if (channel->write_regs(channel, 2, 1, &regval)!=1) return -1;
             return cnt;
@@ -419,7 +419,7 @@ void monitor_virtual_regs(struct kchannel* channel, uint16_t reg, uint16_t* resu
         }
         calibration.ao_sw = *result;
         set_fp_by_mode();
-        vvprintf("VIRTUAL REGS ao mode=%d\n",calibration.ao_sw);
+        dbg_(2,"VIRTUAL REGS ao mode=%d\n",calibration.ao_sw);
     } else if (reg == 1024) {
         if (! loaded) {
             load_calibrating_const(channel);
@@ -427,7 +427,7 @@ void monitor_virtual_regs(struct kchannel* channel, uint16_t reg, uint16_t* resu
         }
         calibration.ai_sw = *result;
         set_fp_by_mode();
-        vvprintf("VIRTUAL REGS ai mode=%d\n",calibration.ai_sw);
+        dbg_(2,"VIRTUAL REGS ai mode=%d\n",calibration.ai_sw);
     }
 }
 
@@ -452,10 +452,10 @@ void write_virtual_coils(struct kchannel* channel, uint16_t reg, uint8_t* values
         return;
     }
     if (((values[0] >> shift) & 1)== 0) {
-        vvprintf("VIRTUAL COIL 1001 mode=on d=%02x\n", values[0]);
+        dbg_(2,"VIRTUAL COIL 1001 mode=on d=%02x\n", values[0]);
         if (write(w1bus, "enabled", 7)) {}
     } else {
-        vvprintf("VIRTUAL COIL 1001 mode=off d=%02x\n", values[0]);
+        dbg_(2,"VIRTUAL COIL 1001 mode=off d=%02x\n", values[0]);
         if (write(w1bus, "disabled", 8)) {}
     }
     close(w1bus);
