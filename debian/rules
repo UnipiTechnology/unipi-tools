@@ -27,8 +27,8 @@ override_dh_auto_configure:
 	dh_auto_configure -- \
 	    --libdir=/usr/lib/$(DEB_HOST_MULTIARCH) \
 	    --sysconfdir=/etc \
-	    --bindir=/opt/unipi/tools \
-	    --sbindir=/opt/unipi/tools \
+	    --bindir=/usr/bin \
+	    --sbindir=/usr/sbin \
 	    --disable-silent-rules
 
 override_dh_autoreconf:

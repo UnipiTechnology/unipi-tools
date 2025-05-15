@@ -8,8 +8,7 @@ AM_CPPFLAGS = \
 
 AM_CFLAGS = ${my_CFLAGS}
 
-bin_PROGRAMS = r2k
-sbin_PROGRAMS = unipitcp
+sbin_PROGRAMS = unipitcp r2k
 common_ldflags = \
     $(top_builddir)/lib/libunipichannel.la
 
