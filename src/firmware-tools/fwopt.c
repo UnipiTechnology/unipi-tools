@@ -121,7 +121,7 @@ void print_usage(char *argv0)
     printf("\n");
     printf("General options:\n");
     printf("  -a, --auto \t\t automatic update of all boards\n");
-    printf("  -d, --dir <path>\t firmware directory, default /opt/unipi/firmware\n");
+    printf("  -d, --dir <path>\t firmware directory, default /usr/lib/firmware/unipi\n");
     printf("  -P, --programm\t write firmware to flash\n");
     printf("  -R, --resetrw\t\t reset user settings to default, must be used with [-P|-U]\n");
     printf("  -U, --upgrade\t\t upgrade firmware (from 5.x or below to 6.x or newer)\n");
