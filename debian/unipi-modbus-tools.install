@@ -1,8 +1,8 @@
 #! /usr/bin/dh-exec
 
 etc/default/unipitcp
-opt/unipi/tools/unipitcp
-opt/unipi/tools/r2k
+usr/sbin/unipitcp
+usr/sbin/r2k
 usr/lib/systemd/system/unipitcp.service
 # usr/share/doc/unipi-modbus-tools/
 usr/share/doc/unipi-tools/* usr/share/doc/unipi-modbus-tools/

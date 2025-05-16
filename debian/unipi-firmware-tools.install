@@ -1,8 +1,8 @@
 #! /usr/bin/dh-exec
 
-opt/unipi/tools/fwi2c
-opt/unipi/tools/fwspi
-opt/unipi/tools/fwserial
+usr/bin/fwi2c
+usr/bin/fwspi
+usr/bin/fwserial
 usr/lib/systemd/system/unipifwupdate.service
 # usr/share/doc/unipi-firmware-tools/
 usr/share/doc/unipi-tools/* usr/share/doc/unipi-firmware-tools/

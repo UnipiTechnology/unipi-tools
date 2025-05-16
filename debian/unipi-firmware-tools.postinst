@@ -1,5 +1,5 @@
 #!/bin/sh
-# postinst script for unipi-modbus-tools
+# postinst script for unipi-firmware-tools
 #
 # see: dh_installdeb(1)
 
@@ -20,6 +20,12 @@ set -e
 
 case "$1" in
     configure)
+        if ! [ -d /usr/lib/firmware/unipi ]; then
+            # Create symlink to old path with Unipi firmware files
+            # Firmware package installable to /usr/lib/firmware/unipi 
+            # will drop this symlink
+            ln -s /opt/unipi/firmware /usr/lib/firmware/unipi
+        fi
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
