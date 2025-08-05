@@ -47,16 +47,21 @@
 #endif
 
 #ifndef VIRTUALLED_COUNT
-#define VIRTUALLED_COUNT  32
+#define VIRTUALLED_COUNT  32  // must be divisible by 16 !
 #endif
 
 #ifndef VIRTUALLED_COILBASE
 #define VIRTUALLED_COILBASE 3000
 #endif
 
+#ifndef VIRTUALLED_REGBASE
+#define VIRTUALLED_REGBASE (4000 - (VIRTUALLED_COUNT / 16))
+#endif
+
 static int _vleds_enabled=VIRTUALLED_ENABLED;
 static char *_vleds_path=VIRTUALLED_DEFAULTMODE;
 static int _update_led(uint16_t led, int value);
+static uint32_t _vleds_state=0;
 
 int virtual_leds_option(int option_index, const char* arg)
 {
@@ -94,12 +99,12 @@ int virtual_leds_option(int option_index, const char* arg)
   return 0;
 }
 
-int virtual_leds_touched(uint16_t reg, uint8_t nb)
+int virtual_leds_coil_touched(uint16_t reg, uint8_t nb)
 {
   return _vleds_enabled && (((reg + nb) > VIRTUALLED_COILBASE) && (reg < (VIRTUALLED_COILBASE + VIRTUALLED_COUNT)));
 }
 
-int virtual_leds_write(uint16_t reg, uint8_t cnt, uint8_t* data)
+int virtual_leds_coil_write(uint16_t reg, uint8_t cnt, uint8_t* data)
 {
   if (!_vleds_enabled) {
     err_(3, "ULED logic error, access on %d-%d in disabled state\n", reg, reg + cnt);
@@ -112,6 +117,31 @@ int virtual_leds_write(uint16_t reg, uint8_t cnt, uint8_t* data)
       return e;
   }
   return 0;
+}
+
+int virtual_leds_reg_touched(uint16_t reg, uint8_t nb)
+{
+  return _vleds_enabled && (((reg + nb) > VIRTUALLED_REGBASE) && (reg < (VIRTUALLED_REGBASE + VIRTUALLED_COUNT / 16)));
+}
+
+int virtual_leds_reg_read(uint16_t reg, uint8_t cnt, uint16_t* result)
+{
+  uint16_t *src = ((uint16_t*)&_vleds_state) + (reg - VIRTUALLED_REGBASE);
+  for (int i = 0; i < cnt; ++i)
+    *result++ = *src++;
+  return cnt;
+}
+
+int virtual_leds_reg_write(uint16_t reg, uint8_t cnt, uint16_t* values)
+{
+  uint16_t *dst = ((uint16_t*)&_vleds_state) + (reg - VIRTUALLED_REGBASE);
+  int first = (reg - VIRTUALLED_REGBASE) * 16;
+  for (int i = 0; i < cnt; ++i, ++dst, first += 16) {
+    *dst = *values++;
+    for (int j=0; j < 16; ++j)
+      _update_led(first + j, *dst & (1 << j));
+  }
+  return cnt;
 }
 
 static int _update_led(uint16_t led, int value)
@@ -136,6 +166,8 @@ static int _update_led(uint16_t led, int value)
     _errors |= mask;
     return -1;
   }
+
+  _vleds_state = (_vleds_state & ~mask) | (value ? mask : 0);
 
   uint8_t ch = value ? '1' : '0';
   write(fd, &ch, 1);
