@@ -29,9 +29,15 @@
 int virtual_leds_option(int option_index, const char* arg);
 
 // detect if some coil is inside of memoryspace
-int virtual_leds_touched(uint16_t reg, uint8_t nb);
+int virtual_leds_coil_touched(uint16_t reg, uint8_t nb);
 
 // do the modbus writecoil
-int virtual_leds_write(uint16_t reg, uint8_t cnt, uint8_t* data);
+int virtual_leds_coil_write(uint16_t reg, uint8_t cnt, uint8_t* data);
+
+
+int virtual_leds_reg_touched(uint16_t reg, uint8_t nb);
+
+int virtual_leds_reg_read(uint16_t reg, uint8_t cnt, uint16_t* result);
+int virtual_leds_reg_write(uint16_t reg, uint8_t cnt, uint16_t* values);
 
 #endif
