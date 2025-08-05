@@ -170,7 +170,9 @@ int nb_modbus_reply(nb_modbus_t *nb_ctx, uint8_t *req, int req_length, int broad
             uint8_t c;
 
             rsp[rsp_length++] = nb << 1;
-            if ((address >= OFFSET_V_REGS) && (address < OFFSET_PV_REGS)) {
+            if (virtual_leds_reg_touched(address, nb)) {
+                n = virtual_leds_reg_read(address, nb, (uint16_t*) (rsp+rsp_length));
+            } else if ((address >= OFFSET_V_REGS) && (address < OFFSET_PV_REGS)) {
                 n = read_virtual_regs(channel, address, nb, (uint16_t*) (rsp+rsp_length));
             } else if((address >= OFFSET_PV_REGS)){
             	n = read_pure_virtual_regs(address, nb,  (uint16_t*) (rsp+rsp_length));
@@ -204,9 +206,9 @@ int nb_modbus_reply(nb_modbus_t *nb_ctx, uint8_t *req, int req_length, int broad
         } else if((address >= 1004) && (address <= 1006)) {
             err_(2, "Illegal data address 0x%0X in write_coil\n", address);
             rsp_length = nb_response_exception(nb_ctx->ctx, MODBUS_EXCEPTION_ILLEGAL_DATA_ADDRESS, rsp);
-        } else if(virtual_leds_touched(address, 1)) {
+        } else if(virtual_leds_coil_touched(address, 1)) {
             uint8_t value = data ? 1 : 0;
-            if (virtual_leds_write(address, 1, &value)) {
+            if (virtual_leds_coil_write(address, 1, &value)) {
               err_(2, "Illegal data address 0x%0X in write_coil\n", address);
               rsp_length = nb_response_exception(nb_ctx->ctx, MODBUS_EXCEPTION_ILLEGAL_DATA_ADDRESS, rsp);
             } else {
@@ -233,7 +235,9 @@ int nb_modbus_reply(nb_modbus_t *nb_ctx, uint8_t *req, int req_length, int broad
     case MODBUS_FC_WRITE_SINGLE_REGISTER: {
         uint16_t data = (req[offset + 3] << 8) + req[offset + 4];
 
-        if ((address >= 3000) && (address < 4000)) {
+        if (virtual_leds_reg_touched(address, 1))
+            n = virtual_leds_reg_write(address, 1, &data);
+        else if ((address >= 3000) && (address < 4000)) {
             n = write_virtual_regs(channel, address, 1, &data);
         } else {
             n = (channel==NULL) ? -1 : channel->write_regs(channel, address, 1, &data);
@@ -261,9 +265,9 @@ int nb_modbus_reply(nb_modbus_t *nb_ctx, uint8_t *req, int req_length, int broad
         } else if (address < 0 || ((address <= 1006) && (address + nb > 1004))) {
             err_(2, "Illegal data address 0x%0X in write_coils\n", address);
             rsp_length = nb_response_exception(nb_ctx->ctx, MODBUS_EXCEPTION_ILLEGAL_DATA_ADDRESS, rsp);
-        } else if (virtual_leds_touched(address, nb)) {
+        } else if (virtual_leds_coil_touched(address, nb)) {
 
-          if (virtual_leds_write(address, nb, rsp+rsp_length + 5)) {
+          if (virtual_leds_coil_write(address, nb, rsp+rsp_length + 5)) {
               err_(2, "Illegal data address 0x%0X in write_coils\n", address);
               rsp_length = nb_response_exception(nb_ctx->ctx, MODBUS_EXCEPTION_ILLEGAL_DATA_ADDRESS, rsp);
               break;
@@ -304,7 +308,9 @@ int nb_modbus_reply(nb_modbus_t *nb_ctx, uint8_t *req, int req_length, int broad
                 rsp[j+1] = c;
             }
 
-            if ((address >= 3000) && (address < 4000)) {
+            if (virtual_leds_reg_touched(address, nb))
+                n = virtual_leds_reg_write(address, nb, (uint16_t*)(rsp + rsp_length + 5));
+            else if ((address >= 3000) && (address < 4000)) {
                 n = write_virtual_regs(channel, address, nb, (uint16_t*)(rsp + rsp_length + 5));
             } else {
                 n = (channel==NULL) ? -1 : channel->write_regs(channel, address, nb, (uint16_t*)(rsp + rsp_length + 5));
