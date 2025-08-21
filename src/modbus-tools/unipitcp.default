@@ -5,4 +5,4 @@
 LISTEN_IP=127.0.0.1
 
 # to which port the service will bind to
-LISTEN_PORT=502
+LISTEN_PORT=50200
