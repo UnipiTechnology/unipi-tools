@@ -117,6 +117,7 @@ void print_usage(char *argv0)
     printf("Bus options:\n");
     printf("  -p, --port <path>\t i2c bus (e.g. /dev/i2c-1 or /dev/i2c/1)\n");
     printf("  -u, --unit <ID>\t i2c device address (1...254)\n");
+    printf("  -V, --verify\t\t compare flash with file\n");
 #endif
     printf("\n");
     printf("General options:\n");
@@ -141,7 +142,7 @@ char* shortopt = "vVPRUDCp:b:u:d:F:t:o:";
 char* shortopt = "avPRUCs:b:d:F:i:u:";
 #endif
 #ifdef FWI2C
-char* shortopt = "avPs:d:F:i:u:p:";
+char* shortopt = "avVPs:d:F:i:u:p:";
 #endif
 
 extern const char* program_name;  // defined in fw.c
@@ -210,6 +211,9 @@ int parseopt(int argc, char **argv)
        case 'd':
            firmwaredir = strdup(optarg);
            break;
+       case 'V':
+           do_verify = 1;
+           break;
 #ifdef FWSPI
        case 's':
            com_options.PORT = strdup(optarg);
@@ -230,9 +234,6 @@ int parseopt(int argc, char **argv)
            break;
 #endif
 #ifdef FWSERIAL
-       case 'V':
-           do_verify = 1;
-           break;
        case 'p':
            com_options.PORT = strdup(optarg);
            break;

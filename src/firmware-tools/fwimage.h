@@ -23,6 +23,8 @@
 #define __FWIMAGE_H
 
 #include "debug_print.h"
+#include <kchannel.h>
+#include <armutil.h>
 
 typedef struct __attribute__((__packed__)) {
     uint32_t swversion;
@@ -50,13 +52,10 @@ int setup_boot_context(int device_id, int baud, char parity, int stopbit);
 void patch_first_page(T_image_header *header, uint8_t* prog_data);
 void patch_first_page_downgrade(T_image_header *header, uint8_t* prog_data);
 
-int load_full_image(char* fname, T_image_header *header, void* prog_data, void* bootloader, void* rw_data, int transient);
-int load_image(char* fname, T_image_header *header, void* prog_data, void* bootloader, void* rw_data);
 T_image_header* load_image_header(Tboard_version* bv);
 uint16_t get_image_version(Tboard_version* bv);
 
 
-int load_bin(Tboard_version* bv, T_image_header *header, void* prog_data, void* rw_data);
 uint16_t get_bin_version(Tboard_version* bv);
 
 
