@@ -71,6 +71,8 @@ int binary_data_read(struct binary_data *bd, const char *datafile)
     return -1;
   }
 
+  memset(bd->pointer, 0xFF, bd->length);
+
   if (read(fd, bd->pointer, bd->length) != size) {
     err_(-1,"Could not read entire finalization (%ld bytes) from file %s. Error: %s\n", size, datafile, strerror(errno));
     binary_data_free(bd);

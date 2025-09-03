@@ -37,22 +37,161 @@
 #include "fwdriver.h"
 #include "kchannel.h"  // Tboard_version
 #include "debug_print.h"
-
-// local debug printing facility
-#define DRIVERNAME  "driver-i2c: "
-#define dbg_(verb, format, args...) do { if(verbose >= verb) fprintf(stdout, format, ##args); } while (0)
-#define err_(verb, format, args...) do { if(verbose >= verb) fprintf(stderr, format, ##args); } while (0)
-
-// debug levels
-// 0 ... print always (even in silent mode)
-// 1 ... print when requested (-v, in future default), User messages
-// 2 ... verbose (-vv)
-// 3 ... trace (-vvv) tracing operation and system error codes and reasons printed
-// 4 ... internals (-vvvv) tracing values
+#include "spicrc.h"
 
 struct i2c_handle {
   int fd;
 };
+
+
+#define BL_PORT_CMD         0xF4                // This is port witk command, firmware must acknowledge each command by reading of it
+#define BL_PORT_DATA        0xF5                // data port for transferring buffers
+
+
+#define BL_CMD_JUMPTOAPP    0x00
+#define BL_CMD_JUMPTOBOOT   0x01
+#define BL_CMD_ACKAPP       0x02
+#define BL_CMD_CLEARAPP     0x03
+#define BL_CMD_FLASHER      0x04
+#define BL_CMD_STARTBUFF    0x05
+#define BL_CMD_FLASHBUFF    0x06
+#define BL_CMD_CHECKBUFF    0x07
+#define BL_CMD_CLEARBUFF    0x08
+
+#define BL_STAT_APPLICATION 0x00
+#define BL_STAT_BOOTLOADER  0x01
+#define BL_STAT_BL_OK       0x01
+#define BL_STAT_BL_FAIL     0xFF
+
+// Sequences:
+// JUMPTOBOOT
+//     for each page:
+//       FLASHER
+//       for each chunk:
+//         STARTBUFF + transport chunk          // _bl_transport
+//         CLEARBUFF
+//         FLASHBUFF
+//         CHECKBUFF
+// JUMPTOAPP
+//   ACKAPP
+
+
+static int _bl_cmd(struct i2c_handle *h, uint8_t command, int gap)
+{
+  if (gap <= 0)
+    gap = 1000; // 1ms inter-packet gap if not specified
+
+  dbg_(4, "_bl_cmd(0x%02x)\n", command);
+
+  if (i2c_smbus_write_byte_data(h->fd, BL_PORT_CMD, command)) {
+    err_(3, "  In: write command @ %04x\n", command);
+    err_(3, "  Err(%d): %s\n", errno, strerror(errno));
+    return -1;
+  }
+
+  usleep(gap);
+
+  int val = i2c_smbus_read_byte_data(h->fd, BL_PORT_CMD);
+  if (val < 0) {
+    err_(3, "  In: transport command @ %04x\n", command);
+    err_(3, "  Err(%d): %s\n", errno, strerror(errno));
+    return -1;
+  }
+
+  if (val != command) {
+    err_(3, "  In: command not acknowledged @ %04x read %04x\n", command,val);
+    return -1;
+  }
+
+  // packet succesfully acknowledged by firmware
+  return 0;
+}
+
+static int _bl_transport(struct i2c_handle *h, uint32_t pageaddr, uint8_t *buffer)
+{
+  dbg_(4, "_bl_transport(0x%08x)\n", pageaddr);
+
+  // start transporting buffer
+  if (_bl_cmd(h, BL_CMD_STARTBUFF, 10000)) {
+    err_(3, "  In: start flash\n");
+    return -1;
+  }
+
+  // presun 256 bajtu do firmware (nejrychleji jak to jde)
+  for (int i = 0; i < 8; ++i)
+    if (i2c_smbus_write_i2c_block_data(h->fd, BL_PORT_DATA, 32, &buffer[32*i])) {
+      err_(3, "  In: write packet @ %d len %d\n", i, 32);
+      err_(3, "  Err(%d): %s\n", errno, strerror(errno));
+      return -1;
+    }
+
+  // presun pomocne hlavicky do firmware
+  struct __attribute__((packed)) {
+    uint32_t pageaddr;
+    uint16_t crc;
+  } transport = { pageaddr, 0};
+
+  transport.crc = SpiCrcString(buffer, 64*sizeof(uint32_t), 0);
+  transport.crc = SpiCrcString(&transport.pageaddr, sizeof(uint32_t), transport.crc);
+
+  if (i2c_smbus_write_i2c_block_data(h->fd, BL_PORT_DATA, 6, (uint8_t *)&transport)) {
+    err_(3, "  In: write packet @ %d len %d\n", 8, 6);
+    err_(3, "  Err(%d): %s\n", errno, strerror(errno));
+    return -1;
+  }
+
+  usleep(50000);
+
+  if (i2c_smbus_read_byte_data(h->fd, BL_PORT_CMD) != 0xFF) {
+    err_(3, "  In: transport buffer CRC invalid\n");
+    err_(3, "  Err(%d): %s\n", errno, strerror(errno));
+    return -1;
+  }
+
+  dbg_(4, "_bl_transport(0x%08x) OK\n", pageaddr);
+  return 0;
+}
+
+static int _flash_page(struct i2c_handle *h, struct page_description *pd, int verify)
+{
+  dbg_(4, "_flash_page(0x%08x, %d)\n", pd->flash_addr, verify);
+
+  // start flashing
+  if (_bl_cmd(h, BL_CMD_FLASHER, 10000)) {
+    err_(3, "  In: start flash page\n");
+    return -1;
+  }
+
+  for (int offset = 0; offset < PAGE_SIZE; offset += 256) {
+    if (_bl_transport(h, pd->flash_addr + offset, pd->data + offset)) {
+      err_(3, "  In: flash_page transport @ %04x len 256", offset);
+      return -1;
+    }
+
+    //if (!offset)
+    //  if (_bl_cmd(h, BL_CMD_CLEARBUFF, 50000)) {
+    //    err_(3, "  In: start flash page\n");
+    //    return -1;
+    //  }
+
+    usleep(1000);
+
+    if (_bl_cmd(h, BL_CMD_FLASHBUFF, offset ? 10000 : 80000)) {
+      err_(3, "  In: flash buffer offset %04x\n", offset);
+      return -1;
+    }
+
+    if (verify)
+      if (_bl_cmd(h, BL_CMD_CHECKBUFF, 1000)) {
+        err_(3, "  In: verify buffer offset %04x\n", offset);
+        return -1;
+      }
+  }
+
+  return 0;
+}
+
+
 
 void* fwi2c_open(struct comopt_struct *comopt)
 {
@@ -150,7 +289,7 @@ uint16_t fwi2c_get_firmware_lock(void* channel)
 {
   struct i2c_handle *handle = channel;
 
-  int lock = i2c_smbus_read_word_data(handle->fd, 0xF4);
+  int lock = i2c_smbus_read_word_data(handle->fd, 0xFA);
   if (lock < 0) {
     err_(3, "  In: read firmware lock @ 0xF4.\n");
     err_(3, "  Err(%d): %s\n", errno, strerror(errno));
@@ -166,20 +305,67 @@ uint16_t fwi2c_get_firmware_lock(void* channel)
 
 int fwi2c_start(void* channel)
 {
-  // currently not supported
-	return -1;
+  struct i2c_handle *handle = channel;
+
+  if (!handle) {
+    err_(3, "  In:start no channel\n");
+    return -1;
+  }
+
+  int ret = flock(handle->fd, LOCK_EX);
+  if (ret < 0) {
+    err_(1, "Error lock %d", ret);
+    return ret;
+  }
+
+  dbg_(4, "  exclusive lock acquired\n");
+
+
+  // write coil 1004 to 1
+  if (_bl_cmd(handle, BL_CMD_JUMPTOBOOT, 200000)) {
+    err_(3, "  In: jump to bootloader\n");
+    return -1;
+  }
+
+	return 0;
 }
 
 
 int fwi2c_run(void* channel)
 {
-  // currently not supported
+  struct i2c_handle *handle = channel;
+  if (!handle) {
+    err_(3, "  In: run no channel\n");
+    return -1;
+  }
+
+  // tady nevim proces potvrzeni
+  //kchannel->finish_firmware(kchannel);
+
+  if (_bl_cmd(handle, BL_CMD_JUMPTOAPP, 200000)) {
+    err_(3, "  In: run\n");
+    return -1;
+  }
+
+  flock(handle->fd, LOCK_UN);
+
+  dbg_(4, "  exclusive lock released\n");
 	return 0;
 }
 
 int fwi2c_confirm(void* channel)
 {
-  // currently not supported
+  struct i2c_handle *handle = channel;
+  if (!handle) {
+    err_(3, "  In: confirm no channel\n");
+    return -1;
+  }
+
+  // write coil 1004 to zero
+  if (_bl_cmd(handle, BL_CMD_ACKAPP, 10000)) {
+    err_(3, "  In: jump to application\n");
+    return -1;
+  }
   return 0;
 }
 
@@ -201,8 +387,48 @@ int fwi2c_flash(void* channel, struct page_description *pd_array, int count, int
 {
   struct i2c_handle *handle = channel;
 
-  err_(-1, "Flashing over i2c is currently not supported\n");
-  return -1;
+  dbg_(4, "  flash pages=%d, action=%d, verify=%d\n", count, action, action & 1);
+  for (int i = 0 ; i < count; ++i) {
+    dbg_(4, "  page[0x%08x] ", pd_array[i].flash_addr);
+    dbg_(4, "%02x %02x %02x %02x ...\n", pd_array[i].data[0], pd_array[i].data[1], pd_array[i].data[2], pd_array[i].data[3]);
+  }
+
+  // start flashing
+  // write all pages
+
+  for (int retry = 0; retry < 5; ++retry) {
+    dbg_(1, "Writing pages %d. try ", retry + 1);
+
+    int error = 0;
+    for (int i = 0 ; i < count; i++) {
+      dbg_(1, ".");
+      if (verbose >= 1)
+        fflush(stdout);
+
+      // page already written ?
+      if (pd_array[i].errors < 0)
+        continue;
+
+      int ret = _flash_page(handle, &pd_array[i], action & 1);
+      pd_array[i].errors = !ret ? -1 : (pd_array[i].errors + 1);
+      error |= ret;
+    }
+    dbg_(1, "\n");
+
+    // entire segment written ?
+    if (!error)
+      break;
+
+  }
+
+  dbg_(1, "Writing pages done.\n");
+
+  // TODO: publish error when failed to flash device
+  for (int i = 0 ; i < count; i++)
+    if (pd_array[i].errors > 0)
+      return -1;
+
+  return 0;
 }
 
 static int _process_configuration(struct i2c_handle *h, struct binary_data *data, int op)

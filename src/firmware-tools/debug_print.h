@@ -30,5 +30,13 @@ extern int verbose;
 
 #define dbg_(verb, format, args...) do { if(verbose >= verb) fprintf(stdout, format, ##args); } while (0)
 #define err_(verb, format, args...) do { if(verbose >= verb) fprintf(stderr, format, ##args); } while (0)
+#define dwt_(verb, format, args...) do { if(verbose >= verb) {fprintf(stdout, format, ##args); getchar(); }} while (0)
+
+// debug levels
+// 0 ... print always (even in silent mode)
+// 1 ... print when requested (-v, in future default), User messages
+// 2 ... verbose (-vv)
+// 3 ... trace (-vvv) tracing operation and system error codes and reasons printed
+// 4 ... internals (-vvvv) tracing values
 
 #endif
