@@ -27,21 +27,21 @@
 #include <armutil.h>
 
 typedef struct __attribute__((__packed__)) {
-    uint32_t swversion;
-    uint32_t hwversion;
-    uint32_t firmware_length;
-    uint32_t bootloader_length;
-    uint32_t bootloader_start;
-    uint32_t rwdata_length;
-    uint32_t rwdata_start;
-    uint32_t main_address;
-    uint32_t status;
-    uint32_t bl_uart;
-    uint32_t bl_uart_brr;
-    uint32_t bl_uart_parity;
-    uint32_t transient_length;
-    uint32_t transient_start;
-    uint32_t platform;    
+	uint32_t swversion;
+	uint32_t hwversion;
+	uint32_t firmware_length;
+	uint32_t bootloader_length;
+	uint32_t bootloader_start;
+	uint32_t rwdata_length;
+	uint32_t rwdata_start;
+	uint32_t main_address;
+	uint32_t status;
+	uint32_t bl_uart;
+	uint32_t bl_uart_brr;
+	uint32_t bl_uart_parity;
+	uint32_t transient_length;
+	uint32_t transient_start;
+	uint32_t platform;
 } T_image_header;
 
 #define IMAGE_HEADER_LENGTH 256

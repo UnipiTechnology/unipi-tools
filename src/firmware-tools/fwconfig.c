@@ -39,11 +39,11 @@ struct comopt_struct com_options = {
 	.DEVICE_ID = 15,
 	.parity = 'N',
 	.timeout_ms = 800,
-    .stopbit = 1,
+	.stopbit = 1,
 #endif
 #ifdef FWI2C
-  .PORT = "/dev/i2c-1",
-  .DEVICE_ID = 0x1F,
+	.PORT = "/dev/i2c-1",
+	.DEVICE_ID = 0x1F,
 #endif
 };
 

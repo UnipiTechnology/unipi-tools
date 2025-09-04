@@ -32,39 +32,39 @@
 
 T_image_header* load_image_header(Tboard_version* bv)
 {
-    uint16_t sw_version_bak = bv->sw_version;
-    bv->sw_version = 0x600;
-    char *fwname = firmware_name(bv, firmwaredir, ".img");
-    bv->sw_version = sw_version_bak;
+	uint16_t sw_version_bak = bv->sw_version;
+	bv->sw_version = 0x600;
+	char *fwname = firmware_name(bv, firmwaredir, ".img");
+	bv->sw_version = sw_version_bak;
 
-    FILE* fd = fopen(fwname, "rb");
-    free(fwname);
-    if (!fd)
-      return NULL;
+	FILE* fd = fopen(fwname, "rb");
+	free(fwname);
+	if (!fd)
+		return NULL;
 
-    T_image_header* header = malloc(sizeof(T_image_header));
-    if (fread(header, 1, sizeof(*header), fd) != sizeof(*header)) {
-        free(header);
-        header = NULL;
-    }
-    fclose(fd);
-    return header;
+	T_image_header* header = malloc(sizeof(T_image_header));
+	if (fread(header, 1, sizeof(*header), fd) != sizeof(*header)) {
+		free(header);
+		header = NULL;
+	}
+	fclose(fd);
+	return header;
 }
 
 uint16_t get_image_version(Tboard_version* bv)
 {
-  T_image_header* header = load_image_header(bv);
-  if (!header)
-    return 0;
+	T_image_header* header = load_image_header(bv);
+	if (!header)
+		return 0;
 
-  uint16_t sw_version = header->swversion;
-  free(header);
+	uint16_t sw_version = header->swversion;
+	free(header);
 	return sw_version;
 }
 
-#define USART_CR1_M0     (uint32_t) 0x00001000   
-#define USART_CR1_PS     (uint32_t) 0x00000200 
-#define USART_CR1_PCE    (uint32_t) 0x00000400 
+#define USART_CR1_M0     (uint32_t) 0x00001000
+#define USART_CR1_PS     (uint32_t) 0x00000200
+#define USART_CR1_PCE    (uint32_t) 0x00000400
 #define USART_CR2_STOP2  (uint32_t) 0x20000000
 
 #define BRR_UHIGH 417   //  115200
