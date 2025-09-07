@@ -22,8 +22,6 @@
 #ifndef __FWCONFIG_H
 #define __FWCONFIG_H
 
-//#define FWSERIAL 1
-//#define FWSPI 1
 
 struct comopt_struct {
 	char* PORT;

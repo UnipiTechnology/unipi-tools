@@ -32,132 +32,39 @@
 
 T_image_header* load_image_header(Tboard_version* bv)
 {
-    FILE* fd;
-    char* fwname;
-    uint16_t sw_version_bak;
-    T_image_header* header = NULL;
+	uint16_t sw_version_bak = bv->sw_version;
+	bv->sw_version = 0x600;
+	char *fwname = firmware_name(bv, firmwaredir, ".img");
+	bv->sw_version = sw_version_bak;
 
-    sw_version_bak = bv->sw_version;
-    bv->sw_version = 0x600;
-    fwname = firmware_name(bv, firmwaredir, ".img");
+	FILE* fd = fopen(fwname, "rb");
+	free(fwname);
+	if (!fd)
+		return NULL;
 
-    if ((fd = fopen(fwname, "rb"))!=NULL) {
-        header = malloc(sizeof(T_image_header));
-        if (fread(header, 1, sizeof(*header), fd) != sizeof(*header)) {
-            free(header);
-            header = NULL;
-        } 
-        fclose(fd);
-    }
-    free(fwname);
-    bv->sw_version = sw_version_bak;
-    return header;
+	T_image_header* header = malloc(sizeof(T_image_header));
+	if (fread(header, 1, sizeof(*header), fd) != sizeof(*header)) {
+		free(header);
+		header = NULL;
+	}
+	fclose(fd);
+	return header;
 }
 
 uint16_t get_image_version(Tboard_version* bv)
 {
-    uint16_t sw_version = 0;
-    T_image_header* header = load_image_header(bv);
-    if (header) {
-		sw_version = header->swversion;
-		free(header);
-	}
+	T_image_header* header = load_image_header(bv);
+	if (!header)
+		return 0;
+
+	uint16_t sw_version = header->swversion;
+	free(header);
 	return sw_version;
 }
 
-int load_full_image(char* fname, T_image_header *header, void* prog_data, void* bootloader, void *rwdata, int transient)
-{
-	FILE* fd;
-
-	dbg_(1,"Loading image: %s\n", fname);
-	if ((fd = fopen(fname, "rb")) == NULL) {
-		err_(-1,"Cannot open file %s\n", fname);
-		return -1;
-	}
-	if (fread(header, 1, sizeof(*header), fd) != sizeof(*header)) {
-		err_(-1,"Cannot read header of image %s\n", fname);
-		goto err;
-	}
-	if (header->firmware_length > MAX_FW_SIZE) {
-		err_(-1,"Firmware length > max %d\n", MAX_FW_SIZE);
-		goto err;
-	}
-	if (header->bootloader_length > MAX_BL_SIZE) {
-		err_(-1,"Booloader length > max %d\n", MAX_BL_SIZE);
-		goto err;
-	}
-	if (header->rwdata_length > MAX_RW_SIZE) {
-		err_(-1,"RW data length > max %d\n", MAX_RW_SIZE);
-		goto err;
-	}
-	if (header->transient_length > MAX_FW_SIZE) {
-		err_(-1,"Transient firmware length > max %d\n", MAX_FW_SIZE);
-		goto err;
-	}
-	if (fseek(fd, IMAGE_HEADER_LENGTH, SEEK_SET) < 0) {
-		err_(-1,"Cannot seek to firmware in image %s\n", fname);
-		goto err;
-	}
-
-	if ((prog_data != NULL) && !transient) {
-		if (fread(prog_data, 1, header->firmware_length, fd) != header->firmware_length) {
-			err_(-1,"Cannot read firmware from image %s\n", fname);
-			goto err;
-		}
-	} else {
-		if (fseek(fd, header->firmware_length, SEEK_CUR) < 0) {
-			err_(-1,"Cannot seek to bootloader in image %s\n", fname);
-			goto err;
-		}
-	}
-	if (bootloader != NULL) {
-		if (fread(bootloader, 1, header->bootloader_length, fd) != header->bootloader_length) {
-			err_(-1,"Cannot read bootloader from image %s\n", fname);
-			goto err;
-		}
-	} else {
-		if (fseek(fd, header->bootloader_length, SEEK_CUR) < 0) {
-			err_(-1,"Cannot seek to rwdata in image %s\n", fname);
-			goto err;
-		}
-	}
-
-	if (rwdata != NULL) {
-		if (fread(rwdata, 1, header->rwdata_length, fd) != header->rwdata_length) {
-			err_(-1,"Cannot read rwdata from image %s\n", fname);
-			goto err;
-		}
-	} else if (header->rwdata_length) {
-		if (fseek(fd, header->rwdata_length, SEEK_CUR) < 0) {
-			err_(-1,"Cannot seek to rwdata in image %s\n", fname);
-			goto err;
-		}
-	}
-	if ((prog_data != NULL) && transient) {
-		if (header->transient_length<=0) {
-			goto err;
-		}
-		if (fread(prog_data, 1, header->firmware_length, fd) != header->transient_length) {
-			err_(-1,"Cannot read transient from image %s\n", fname);
-			goto err;
-		}
-	}
-	fclose(fd);
-	return 0;
-err:
-	fclose(fd);
-	return -1;
-}
-
-int load_image(char* fname, T_image_header *header, void* prog_data, void* bootloader, void* rw_data)
-{
-	return load_full_image(fname, header, prog_data, bootloader, rw_data, 0);
-}
-
-
-#define USART_CR1_M0     (uint32_t) 0x00001000   
-#define USART_CR1_PS     (uint32_t) 0x00000200 
-#define USART_CR1_PCE    (uint32_t) 0x00000400 
+#define USART_CR1_M0     (uint32_t) 0x00001000
+#define USART_CR1_PS     (uint32_t) 0x00000200
+#define USART_CR1_PCE    (uint32_t) 0x00000400
 #define USART_CR2_STOP2  (uint32_t) 0x20000000
 
 #define BRR_UHIGH 417   //  115200

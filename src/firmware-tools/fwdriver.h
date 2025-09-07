@@ -44,7 +44,7 @@ struct driver {
 	int  (*confirm)(void*);
 	int  (*reboot)(void*);
 	int  (*flash)(void*, struct page_description *, int, int);
-  int  (*configure)(void*, struct binary_data *write, struct binary_data *read);
+	int  (*configure)(void*, struct binary_data *write, struct binary_data *read);
 };
 
 extern struct driver driver;
