@@ -79,21 +79,21 @@ Tboard_version* fwspi_identify(void* channel)
 
 uint16_t fwspi_get_firmware_lock(void* channel)
 {
-    struct serial_handle *handle = channel;
-    uint16_t r519, r513;
-    struct kchannel *kchannel = channel;
-    if (!kchannel)
-        return 0;
+	struct serial_handle *handle = channel;
+	uint16_t r519, r513;
+	struct kchannel *kchannel = channel;
+	if (!kchannel)
+		return 0;
 
-    if ((kchannel->read_regs(kchannel, 513, 1, &r513) != 1) ||
-        (r513 != 0xA53D))
-        return 0xffff;
+	if ((kchannel->read_regs(kchannel, 513, 1, &r513) != 1) ||
+		(r513 != 0xA53D))
+		return 0xffff;
 
-    if (kchannel->read_regs(kchannel, 519, 1, &r519) != 1) {
-        fprintf(stderr, "Identity registers reading failed\n");
-        return 0;
-    }
-    return r519;
+	if (kchannel->read_regs(kchannel, 519, 1, &r519) != 1) {
+		fprintf(stderr, "Identity registers reading failed\n");
+		return 0;
+	}
+	return r519;
 }
 
 int fwspi_start(void* channel)
@@ -130,12 +130,12 @@ int fwspi_run(void* channel)
 int fwspi_confirm(void* channel)
 {
 	struct kchannel *kchannel = channel;
-    int prog_bit = 1004;
+	int prog_bit = 1004;
 	if (kchannel) {
 		kchannel->write_bit(kchannel, prog_bit, 0, 0);
 		usleep(100000);
 	}
-    return 0;
+	return 0;
 }
 
 int fwspi_reboot(void* channel)

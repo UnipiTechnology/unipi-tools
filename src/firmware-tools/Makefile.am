@@ -15,17 +15,17 @@ common_ldflags = \
 bin_PROGRAMS = fwserial fwspi fwi2c
 
 fwserial_SOURCES = \
-    fw.c fwimage.c fwconfig.c fwopt.c fwdriverserial.c fwbin.c
+    fw.c fwimage.c fwconfig.c fwopt.c fwdriverserial.c fwbin.c unipiimg.c platform.c
 fwserial_CFLAGS = -DFWSERIAL
 fwserial_LDADD = -lmodbus $(common_ldflags)
 
 fwspi_SOURCES = \
-    fw.c fwimage.c fwconfig.c fwopt.c fwdriverspi.c fwbin.c
+    fw.c fwimage.c fwconfig.c fwopt.c fwdriverspi.c fwbin.c unipiimg.c platform.c
 fwspi_CFLAGS = -DFWSPI
 fwspi_LDADD = -lmodbus $(common_ldflags)
 
 fwi2c_SOURCES = \
-    fw.c fwimage.c fwconfig.c fwopt.c fwdriveri2c.c fwbin.c binary_data.c
+    fw.c fwimage.c fwconfig.c fwopt.c fwdriveri2c.c fwbin.c binary_data.c unipiimg.c platform.c
 fwi2c_CFLAGS = -DFWI2C
 fwi2c_LDADD = -li2c $(common_ldflags)
 
