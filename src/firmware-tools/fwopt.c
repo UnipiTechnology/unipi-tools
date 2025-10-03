@@ -136,7 +136,7 @@ void print_usage(char *argv0)
 }
 
 #ifdef FWSERIAL
-char* shortopt = "vVPRUDCp:b:u:d:F:t:o:";
+char* shortopt = "vVPRUDCp:b:u:d:F:t:o:r:";
 #endif
 #ifdef FWSPI
 char* shortopt = "avPRUCs:b:d:F:i:u:";
