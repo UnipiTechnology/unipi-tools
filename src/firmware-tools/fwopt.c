@@ -220,7 +220,7 @@ int parseopt(int argc, char **argv)
 			unit = 0;
 			break;
 		case 'i':
-			err_(-1,"Unsupported option, use -u instead.");
+			err_(-1,"Unsupported option, use -u instead.\n");
 			return 1;
 			break;
 		case 'u':
