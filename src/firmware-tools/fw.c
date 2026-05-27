@@ -42,7 +42,7 @@
 #include "unipiimg.h"
 #include "platform.h"
 
-int verbose = 0;
+int verbose;
 
 const char* version_string = "Version " PACKAGE_VERSION; //PROJECT_VER;
 #ifdef FWSERIAL
@@ -423,6 +423,7 @@ error:
 
 int main(int argc, char **argv)
 {
+	verbose = isatty(STDOUT_FILENO) ? 1 : 0;
 	// Parse command line options
 	if (parseopt(argc, argv))
 	  exit(EXIT_FAILURE);

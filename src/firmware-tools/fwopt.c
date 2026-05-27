@@ -62,11 +62,14 @@ static struct option long_options[] = {
 	{"final", required_argument,  0, 'F'},
 	{"help", no_argument,         0, CL_HELP},
 	{"programm", no_argument,     0, 'P'},
+#ifndef FWI2C
 	{"resetrw", no_argument,      0, 'R'},
 	{"upgrade", no_argument,      0, 'U'},
+#endif
 	{"unit", required_argument,	0, 'u'},
 	{"verify", no_argument,       0, 'V'},
 	{"verbose", no_argument,      0, 'v'},
+	{"quiet", no_argument,      0, 'q'},
 	{"version", no_argument,      0, CL_VERSION},
 #ifdef FWSERIAL
 	{"stopbits",required_argument,0, 'o'},
@@ -124,9 +127,12 @@ void print_usage(char *argv0)
 	printf("  -a, --auto \t\t automatic update of all boards\n");
 	printf("  -d, --dir <path>\t firmware directory, default /usr/lib/firmware/unipi\n");
 	printf("  -P, --programm\t write firmware to flash\n");
+#ifndef FWI2C
 	printf("  -R, --resetrw\t\t reset user settings to default, must be used with [-P|-U]\n");
 	printf("  -U, --upgrade\t\t upgrade firmware (from 5.x or below to 6.x or newer)\n");
+#endif
 	printf("  -v, --verbose\t\t show more messages\n");
+	printf("  -q, --quiet\t\t be quiet\n");
 	printf("      --version\t\t show version information\n");
 	printf("      --help\t\t show this page\n");
 	printf("\n");
@@ -136,13 +142,13 @@ void print_usage(char *argv0)
 }
 
 #ifdef FWSERIAL
-char* shortopt = "vVPRUDCp:b:u:d:F:t:o:r:";
+char* shortopt = "vqVPRUDCp:b:u:d:F:t:o:r:";
 #endif
 #ifdef FWSPI
-char* shortopt = "avPRUCs:b:d:F:i:u:";
+char* shortopt = "avqPRUCs:b:d:F:i:u:";
 #endif
 #ifdef FWI2C
-char* shortopt = "avVPs:d:F:i:u:p:";
+char* shortopt = "avqVPs:d:F:i:u:p:";
 #endif
 
 extern const char* program_name;  // defined in fw.c
@@ -174,6 +180,9 @@ int parseopt(int argc, char **argv)
 			break;
 		case 'v':
 			verbose++;
+			break;
+		case 'q':
+			verbose = 0;
 			break;
 		case 'P':
 			do_prog = 1;

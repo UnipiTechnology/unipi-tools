@@ -181,16 +181,17 @@ char* firmware_name(Tboard_version* bv, const char* fwdir, const char* ext)
 {
     char * fname;
 
+    fname = _firmware_name(bv, fwdir, ext, 0);
     if (HW_BOARD(bv->hw_version) == HW_BOARD(bv->base_hw_version)) {
-        fname = _firmware_name(bv, fwdir, ext, 1);
         FILE* fd = fopen(fname, "r");
         if (fd != NULL) {
             fclose(fd);
             return fname;
         }
         free(fname);
+        fname = _firmware_name(bv, fwdir, ext, 1);
     }
-    return _firmware_name(bv, fwdir, ext, 0);
+    return fname;
 }
 
 int check_compatibility(int hw_base, int upboard)
