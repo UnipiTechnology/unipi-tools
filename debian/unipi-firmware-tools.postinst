@@ -24,7 +24,8 @@ case "$1" in
             # Create symlink to old path with Unipi firmware files
             # Firmware package installable to /usr/lib/firmware/unipi 
             # will drop this symlink
-            ln -s /opt/unipi/firmware /usr/lib/firmware/unipi
+            mkdir -p /usr/lib/firmware
+            ln -s /opt/unipi/firmware /usr/lib/firmware/unipi || true
         fi
     ;;
 

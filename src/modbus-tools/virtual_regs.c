@@ -431,32 +431,75 @@ void monitor_virtual_regs(struct kchannel* channel, uint16_t reg, uint16_t* resu
     }
 }
 
-const char unipi_w1bus_path[] = "/run/unipi-plc/by-sys/unipi-w1bus/state";
+static const char *ds2482_dev = NULL;
+
+static int is_ds2482(const char *dev)
+{
+    char path[128];
+    char buf[32];
+    int fd;
+    ssize_t len;
+
+    snprintf(path, sizeof(path), "/sys/bus/i2c/devices/%s/name", dev);
+
+    fd = open(path, O_RDONLY);
+    if (fd < 0)
+        return 0;
+
+    len = read(fd, buf, sizeof(buf) - 1);
+    close(fd);
+
+    if (len <= 0)
+        return 0;
+
+    buf[len] = '\0';
+
+    return (strncmp(buf, "ds2482", 6) == 0);
+}
+
 void initialize_virtual_coils(struct kchannel* channel)
 {
-    int w1bus = open(unipi_w1bus_path, O_RDWR);
-    if (w1bus < 0) {
+    if (is_ds2482("1-0018")) {
+        ds2482_dev = "1-0018";
+    } else if (is_ds2482("2-0018")) {
+        ds2482_dev = "2-0018";
+    } else {
+        ds2482_dev = NULL;
+    }
+
+    if (ds2482_dev == NULL) {
         channel->has_virtual_coils = 0;
         return;
     }
-    close(w1bus);
+
     channel->has_virtual_coils = 1;
 }
 
 void write_virtual_coils(struct kchannel* channel, uint16_t reg, uint8_t* values, uint16_t cnt, int platform)
 {
-
     int shift = 1001 - reg;
-    int w1bus = open(unipi_w1bus_path, O_WRONLY);
-    if (w1bus < 0) {
+
+    if (!ds2482_dev) {
         return;
     }
-    if (((values[0] >> shift) & 1)== 0) {
-        dbg_(2,"VIRTUAL COIL 1001 mode=on d=%02x\n", values[0]);
-        if (write(w1bus, "enabled", 7)) {}
+
+    int fd;
+    const char *path;
+
+    if (((values[0] >> shift) & 1) == 0) {
+        dbg_(2, "VIRTUAL COIL 1001 bind %s d=%02x\n", ds2482_dev, values[0]);
+        path = "/sys/bus/i2c/drivers/ds2482/bind";
     } else {
-        dbg_(2,"VIRTUAL COIL 1001 mode=off d=%02x\n", values[0]);
-        if (write(w1bus, "disabled", 8)) {}
+        dbg_(2, "VIRTUAL COIL 1001 unbind %s d=%02x\n", ds2482_dev, values[0]);
+        path = "/sys/bus/i2c/drivers/ds2482/unbind";
     }
-    close(w1bus);
+
+    fd = open(path, O_WRONLY);
+    if (fd < 0) {
+        return;
+    }
+
+    if (write(fd, ds2482_dev, strlen(ds2482_dev))) {}
+
+    close(fd);
 }
