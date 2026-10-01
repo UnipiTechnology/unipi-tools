@@ -17,6 +17,15 @@ static void generate_map_file(struct UnipiImg *img, char* data, size_t len)
 	snprintf(data, len, "fw_offset=0x08000000\nbl_offset=0x%08x\nrw_offset=0x%08x\n", bl_start, rw_start);
 }
 
+static uint8_t *_alloc_padded(uint32_t length, size_t page)
+{
+	size_t padded = (length + page - 1) & ~(size_t)(page - 1);
+	uint8_t *p = malloc(padded ? padded : page);
+	if (p)
+		memset(p, 0xFF, padded ? padded : page);
+	return p;
+}
+
 static int unipiimg_read_part(struct UnipiImg *img, int part, char* filename)
 {
 	uint8_t **data;
@@ -197,25 +206,25 @@ struct UnipiImg * unipiimg_open(char *filename)
 		goto error;
 	}
 
-	result->program = malloc(result->header->firmware_length);
+	result->program = _alloc_padded(result->header->firmware_length, PAGE_SIZE);
 	if (!result->program) {
 		err_(-1, "Can't allocate memory for firmware of file '%s': %s\n", filename, strerror(errno));
 		goto error;
 	}
 
-	result->bootloader = malloc(result->header->bootloader_length);
+	result->bootloader = _alloc_padded(result->header->bootloader_length, PAGE_SIZE);
 	if (!result->bootloader) {
 		err_(-1, "Can't allocate memory for bootloader of file '%s': %s\n", filename, strerror(errno));
 		goto error;
 	}
 
-	result->rwdata = malloc(result->header->rwdata_length);
+	result->rwdata = _alloc_padded(result->header->rwdata_length, PAGE_SIZE);
 	if (!result->rwdata) {
 		err_(-1, "Can't allocate memory for rwdata of file '%s': %s\n", filename, strerror(errno));
 		goto error;
 	}
 
-	result->transient = malloc(result->header->transient_length);
+	result->transient = _alloc_padded(result->header->transient_length, PAGE_SIZE);
 	if (!result->transient) {
 		err_(-1, "Can't allocate memory for transient of file '%s': %s\n", filename, strerror(errno));
 		goto error;
